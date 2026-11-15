@@ -3,13 +3,13 @@
 ## 1. Document Information
 
 | Item | Value |
-|---|---|
+| --- | --- |
 | Project | QA Automation Framework |
 | Repository | `qa-automation-framework` |
 | Status | Initial test plan |
 | Primary tools | Playwright, TypeScript, Postman, Newman, GitHub Actions |
-| UI application under test | SauceDemo — https://www.saucedemo.com |
-| API application under test | Restful Booker — https://restful-booker.herokuapp.com |
+| UI application under test | SauceDemo — <https://www.saucedemo.com> |
+| API application under test | Restful Booker — <https://restful-booker.herokuapp.com> |
 
 This document describes the intended testing scope and execution approach for this portfolio project. Update it when the implementation or target applications change.
 
@@ -32,13 +32,13 @@ The purpose is to demonstrate test design and automation practices. It is not to
 
 SauceDemo is a sample e-commerce application. The automated suite will cover the main shopping flow, including authentication, product browsing, cart operations, and checkout.
 
-Target: https://www.saucedemo.com
+Target: <https://www.saucedemo.com>
 
 ### 3.2 Restful Booker (API)
 
 Restful Booker is a public demo REST API for booking-related operations. The API suite will exercise representative booking operations, authentication, request validation, and error handling.
 
-Target: https://restful-booker.herokuapp.com
+Target: <https://restful-booker.herokuapp.com>
 
 The API is a shared public demo service. Its data and availability may change independently of this repository.
 
@@ -100,7 +100,7 @@ These exclusions may be revisited in a future project, but they are not required
 ## 6. Test Types
 
 | Test type | Application / layer | Purpose |
-|---|---|---|
+| --- | --- | --- |
 | Functional UI | SauceDemo | Verify key user-facing features and workflows |
 | Negative UI | SauceDemo | Verify invalid input and rejected user actions |
 | UI regression | SauceDemo | Re-run critical journeys after changes |
@@ -143,7 +143,7 @@ Tests should not rely on another test having run first. Use unique test data whe
 ## 8. Test Environments
 
 | Environment | Purpose | Configuration |
-|---|---|---|
+| --- | --- | --- |
 | Local development | Authoring and debugging tests | Developer machine, supported Node.js version, project dependencies, browser binaries |
 | GitHub Actions | Repeatable automated execution | Clean runner, Node.js version pinned in workflow, dependencies installed from lockfile, Playwright browsers installed |
 | SauceDemo | UI system under test | `https://www.saucedemo.com` |
@@ -161,7 +161,7 @@ Tests should not rely on another test having run first. Use unique test data whe
 ## 9. Risks and Mitigations
 
 | Risk | Impact | Mitigation |
-|---|---|---|
+| --- | --- | --- |
 | Public demo API downtime or rate limiting | API tests may fail for reasons unrelated to the framework | Keep tests independently runnable; distinguish service outages from test failures; retry only where justified |
 | Shared API data changes | Tests may become order-dependent or flaky | Create unique records, avoid fixed IDs, and clean up created data |
 | UI changes in SauceDemo | Selectors or expected behavior may change | Prefer stable, user-facing locators and centralize selectors in page objects |
