@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
-import { LoginPage } from "./LoginPage";
+import { LoginPage } from "../../pages/LoginPage";
 
+// Postive tests
 test("successful login", async ({ page }) => {
   const login = new LoginPage(page);
   await login.navigate();
@@ -12,7 +13,7 @@ test("successful login", async ({ page }) => {
   await expect(page.locator(".inventory_item")).toHaveCount(6);
 });
 
-test("successful login with locked out user", async ({ page }) => {
+test("Successful login with locked out user", async ({ page }) => {
   const login = new LoginPage(page);
   await login.navigate();
   await login.login("locked_out_user", "secret_sauce");
@@ -24,7 +25,7 @@ test("successful login with locked out user", async ({ page }) => {
   );
 });
 
-test("successful login with performance glitch user", async ({ page }) => {
+test("Successful login with performance glitch user", async ({ page }) => {
   const login = new LoginPage(page);
   await login.navigate();
   await login.login("performance_glitch_user", "secret_sauce");
@@ -35,7 +36,8 @@ test("successful login with performance glitch user", async ({ page }) => {
   await expect(page.locator(".inventory_item")).toHaveCount(6);
 });
 
-test("login with invalid username", async ({ page }) => {
+// Negative tests
+test("Login with invalid username", async ({ page }) => {
   const login = new LoginPage(page);
   await login.navigate();
   await login.login("wrong_user", "secret_sauce");
@@ -47,7 +49,7 @@ test("login with invalid username", async ({ page }) => {
   );
 });
 
-test("login with invalid password", async ({ page }) => {
+test("Login with invalid password", async ({ page }) => {
   const login = new LoginPage(page);
   await login.navigate();
   await login.login("standard_user", "wrong_password");
@@ -59,7 +61,7 @@ test("login with invalid password", async ({ page }) => {
   );
 });
 
-test("login with invalid username and password", async ({ page }) => {
+test("Login with invalid username and password", async ({ page }) => {
   const login = new LoginPage(page);
   await login.navigate();
   await login.login("wrong_user", "wrong_password");
@@ -71,7 +73,8 @@ test("login with invalid username and password", async ({ page }) => {
   );
 });
 
-test("login with empty username", async ({ page }) => {
+// Boundary tests
+test("Login with empty username", async ({ page }) => {
   const login = new LoginPage(page);
   await login.navigate();
   await login.login("", "secret_sauce");
@@ -81,7 +84,7 @@ test("login with empty username", async ({ page }) => {
   await expect(login.errorMessage).toContainText("Username is required");
 });
 
-test("login with empty password", async ({ page }) => {
+test("Login with empty password", async ({ page }) => {
   const login = new LoginPage(page);
   await login.navigate();
   await login.login("standard_user", "");
@@ -91,7 +94,7 @@ test("login with empty password", async ({ page }) => {
   await expect(login.errorMessage).toContainText("Password is required");
 });
 
-test("login with empty username and password", async ({ page }) => {
+test("Login with empty username and password", async ({ page }) => {
   const login = new LoginPage(page);
   await login.navigate();
   await login.login("", "");
@@ -101,7 +104,7 @@ test("login with empty username and password", async ({ page }) => {
   await expect(login.errorMessage).toContainText("Username is required");
 });
 
-test("separate browser contexts do not share authenticated sessions", async ({
+test("Separate browser contexts do not share authenticated sessions", async ({
   browser,
 }) => {
   const context1 = await browser.newContext();

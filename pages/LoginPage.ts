@@ -2,6 +2,8 @@ import { Page, Locator } from "@playwright/test";
 
 export class LoginPage {
   readonly page: Page;
+
+  // Locators
   readonly usernameInput: Locator;
   readonly passwordInput: Locator;
   readonly loginButton: Locator;
@@ -15,10 +17,12 @@ export class LoginPage {
     this.errorMessage = page.locator('[data-test="error"]');
   }
 
+  // Navigate to login page
   async navigate() {
     await this.page.goto("/");
   }
 
+  // Login using username and password
   async login(username: string, password: string) {
     await this.usernameInput.fill(username);
     await this.passwordInput.fill(password);
