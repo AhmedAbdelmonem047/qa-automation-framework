@@ -28,9 +28,9 @@ The planned items are not part of the current tested coverage unless a later rep
 
 ## Tested Application
 
-| Application | Type | Current status |
-|---|---|---|
-| [SauceDemo](https://www.saucedemo.com) | E-commerce web UI | Automated UI tests implemented |
+| Application                                            | Type                      | Current status                                                  |
+| ------------------------------------------------------ | ------------------------- | --------------------------------------------------------------- |
+| [SauceDemo](https://www.saucedemo.com)                 | E-commerce web UI         | Automated UI tests implemented                                  |
 | [Restful Booker](https://restful-booker.herokuapp.com) | REST API practice service | Planned; no API test results are included in the current report |
 
 ## Test Coverage
@@ -76,15 +76,15 @@ The current UI suite contains **26 distinct test cases**. The recorded run execu
 
 The supplied Playwright HTML report records the following run:
 
-| Item | Result |
-|---|---:|
-| Date | November 17, 2026 |
-| Distinct test cases | 26 |
-| Browser projects | Chromium, Firefox, WebKit |
-| Total executions | 78 |
-| Passed | 78 |
-| Failed | 0 |
-| Reported duration | 26.4 seconds |
+| Item                |                    Result |
+| ------------------- | ------------------------: |
+| Date                |         November 17, 2026 |
+| Distinct test cases |                        26 |
+| Browser projects    | Chromium, Firefox, WebKit |
+| Total executions    |                        78 |
+| Passed              |                        78 |
+| Failed              |                         0 |
+| Reported duration   |              26.4 seconds |
 
 This is a snapshot of the supplied report, not a claim that every future run will have the same result. Re-run the suite after changes and use the newly generated report as the current result.
 
