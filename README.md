@@ -2,46 +2,48 @@
 
 A portfolio test-automation project built with **Playwright, TypeScript, and the Page Object Model (POM)**.
 
-The current implementation automates UI workflows on [SauceDemo](https://www.saucedemo.com), a public e-commerce practice application. The repository is being developed in stages, with API automation, checkout coverage, and CI execution planned as later extensions.
+The current implementation automates UI workflows on [SauceDemo](https://www.saucedemo.com), a public e-commerce practice application. It covers authentication, inventory, shopping-cart operations, and checkout. API automation and continuous integration are planned extensions.
 
-> SauceDemo is a public demo service, not an application owned by this project. Its availability and behavior can change. Test results below describe one recorded run and do not guarantee future availability or defect-free behavior.
+> SauceDemo is a public demo service and is not owned by this project. Its availability and behavior may change. Test results in this README describe a recorded run; they do not guarantee future availability or prove that the application is defect-free.
 
 ## Project Status
 
 ### Implemented and tested
 
 - TypeScript Playwright project with Chromium, Firefox, and WebKit browser projects.
-- Page Object Model classes for login, inventory, and cart pages.
-- UI authentication, inventory, sorting, and shopping-cart tests.
-- Independent test sessions using Playwright's browser-context isolation and per-test login setup where applicable.
+- Page Object Model classes for login, inventory, cart, and checkout pages.
+- Authentication tests, including negative cases and browser-context session isolation.
+- Inventory visibility, product information, and sorting tests.
+- Shopping-cart add/remove, contents, badge, empty-state, and navigation-persistence tests.
+- End-to-end purchase and checkout required-field validation tests.
+- Centralized typed checkout test data.
 - Playwright HTML test reporting.
 
 ### Planned extensions
 
-- Checkout form validation and end-to-end checkout flow.
 - REST API automation against [Restful Booker](https://restful-booker.herokuapp.com).
 - Postman collections and Newman execution.
 - GitHub Actions continuous integration and automated report artifacts.
-- Additional shared fixtures, utilities, and test-data organization as the suite grows.
+- Additional API fixtures, utilities, and supporting documentation as these capabilities are implemented.
 
-The planned items are not part of the current tested coverage unless a later report or repository update explicitly marks them as implemented.
+Planned items are not part of the current tested coverage.
 
-## Tested Application
+## Tested Applications
 
-| Application                                            | Type                      | Current status                                                  |
-| ------------------------------------------------------ | ------------------------- | --------------------------------------------------------------- |
-| [SauceDemo](https://www.saucedemo.com)                 | E-commerce web UI         | Automated UI tests implemented                                  |
-| [Restful Booker](https://restful-booker.herokuapp.com) | REST API practice service | Planned; no API test results are included in the current report |
+| Application                                            | Type                      | Current status                            |
+| ------------------------------------------------------ | ------------------------- | ----------------------------------------- |
+| [SauceDemo](https://www.saucedemo.com)                 | E-commerce web UI         | Automated UI tests implemented            |
+| [Restful Booker](https://restful-booker.herokuapp.com) | REST API practice service | Planned; no API test results are included |
 
 ## Test Coverage
 
-The current UI suite contains **26 distinct test cases**. The recorded run executed them in three browser projects, for **78 successful test executions**.
+The current UI suite contains **30 distinct test cases**. The latest recorded regression run executed these tests across three browser projects, resulting in **90 successful test executions**.
 
 ### Authentication — `tests/ui/auth.spec.ts`
 
-- Successful login.
-- Locked-out user scenario.
-- Performance-glitch user scenario.
+- Successful login with valid credentials.
+- Login rejection for a locked-out user.
+- Successful login with the performance-glitch user.
 - Invalid username.
 - Invalid password.
 - Invalid username and password.
@@ -54,14 +56,14 @@ The current UI suite contains **26 distinct test cases**. The recorded run execu
 
 - Inventory list visibility.
 - Exactly six products are displayed.
-- Every product has a non-empty name and a price.
+- Every product has a non-empty name and price.
 - Price sorting: low to high.
 - Price sorting: high to low.
-- Name sorting: A–Z.
-- Name sorting: Z–A.
+- Product-name sorting: A–Z.
+- Product-name sorting: Z–A.
 - Product names remain associated with their correct prices after sorting.
 
-### Shopping cart — `tests/ui/cart.spec.ts`
+### Shopping Cart — `tests/ui/cart.spec.ts`
 
 - Cart is initially empty.
 - Add a selected product from the inventory.
@@ -72,46 +74,62 @@ The current UI suite contains **26 distinct test cases**. The recorded run execu
 - Cart becomes empty after all products are removed.
 - Cart contents persist after returning to the inventory page.
 
+### Checkout — `tests/ui/checkout.spec.ts`
+
+- Complete a valid purchase from inventory through checkout confirmation.
+- Verify the selected product and order overview.
+- Verify subtotal, tax, and final total.
+- Verify the order-completion header and confirmation message.
+- Reject checkout when the first name is missing.
+- Reject checkout when the last name is missing.
+- Reject checkout when the postal code is missing.
+
 ## Latest Recorded Test Run
 
-The supplied Playwright HTML report records the following run:
+The latest full regression run was completed on **November 18, 2026**.
 
 | Item                |                    Result |
 | ------------------- | ------------------------: |
-| Date                |         November 17, 2026 |
-| Distinct test cases |                        26 |
+| Distinct test cases |                        30 |
 | Browser projects    | Chromium, Firefox, WebKit |
-| Total executions    |                        78 |
-| Passed              |                        78 |
+| Total executions    |                        90 |
+| Passed              |                        90 |
 | Failed              |                         0 |
-| Reported duration   |              26.4 seconds |
+| Pass rate           |                      100% |
 
-This is a snapshot of the supplied report, not a claim that every future run will have the same result. Re-run the suite after changes and use the newly generated report as the current result.
+All 30 test cases passed in each configured browser project in this recorded run. This is a snapshot of one run, not a guarantee that future runs will have the same result.
+
+See [`docs/test-execution-report.md`](docs/test-execution-report.md) for the execution findings, WebKit investigations, and verification details.
 
 ## Repository Structure
 
-The files relevant to the current UI suite are organized as follows:
+The main files relevant to the current UI suite are organized as follows:
 
 ```text
 qa-automation-framework/
 ├── docs/
-│   └── test-plan.md
+│   ├── test-plan.md
+│   └── test-execution-report.md
 ├── pages/
 │   ├── LoginPage.ts
 │   ├── InventoryPage.ts
-│   └── CartPage.ts
+│   ├── CartPage.ts
+│   └── CheckoutPage.ts
+├── test-data/
+│   └── checkout-data.ts
 ├── tests/
 │   └── ui/
 │       ├── auth.spec.ts
 │       ├── inventory.spec.ts
-│       └── cart.spec.ts
+│       ├── cart.spec.ts
+│       └── checkout.spec.ts
 ├── playwright.config.ts
 ├── package.json
 ├── package-lock.json
 └── README.md
 ```
 
-Other folders may be added as API tests, fixtures, Postman collections, CI workflows, and supporting utilities are implemented. Keep this tree synchronized with the actual repository.
+Keep this tree synchronized with the actual repository as additional files and capabilities are added.
 
 ## Prerequisites
 
@@ -120,7 +138,7 @@ Other folders may be added as API tests, fixtures, Postman collections, CI workf
 3. **Git** — to clone the repository and manage changes.
 4. **Visual Studio Code** or another TypeScript editor (recommended).
 
-Internet access is required to reach SauceDemo.
+Internet access is required to reach SauceDemo and install the Playwright browsers.
 
 ## Installation
 
@@ -139,7 +157,7 @@ Replace `<YOUR_GITHUB_REPOSITORY_URL>` with the repository's actual URL.
 npm ci
 ```
 
-`npm ci` installs the exact dependency versions recorded in `package-lock.json`.
+`npm ci` installs the dependency versions recorded in `package-lock.json`.
 
 ### 3. Install Playwright browsers
 
@@ -147,7 +165,7 @@ npm ci
 npx playwright install
 ```
 
-On Linux machines or CI runners, install the browser system dependencies as well:
+On Linux machines or CI runners, install browser system dependencies as well:
 
 ```bash
 npx playwright install --with-deps
@@ -155,7 +173,7 @@ npx playwright install --with-deps
 
 ## Running the Tests
 
-Run the complete current suite:
+Run the complete test suite across all configured browser projects:
 
 ```bash
 npx playwright test
@@ -167,18 +185,28 @@ Run all UI tests:
 npx playwright test tests/ui
 ```
 
-Run a single suite:
+Run an individual suite:
 
 ```bash
+# Authentication
 npx playwright test tests/ui/auth.spec.ts
+
+# Inventory
 npx playwright test tests/ui/inventory.spec.ts
+
+# Shopping cart
 npx playwright test tests/ui/cart.spec.ts
+
+# Checkout
+npx playwright test tests/ui/checkout.spec.ts
 ```
 
-Run only Chromium:
+Run the suite in one browser project:
 
 ```bash
 npx playwright test --project=chromium
+npx playwright test --project=firefox
+npx playwright test --project=webkit
 ```
 
 Run with a visible browser window:
@@ -193,7 +221,7 @@ Open Playwright's interactive UI mode:
 npx playwright test --ui
 ```
 
-The browser project names are configured in `playwright.config.ts`. The commands above use the project names observed in the supplied test report.
+The browser project names are configured in `playwright.config.ts`.
 
 ## Viewing the Playwright Report
 
@@ -203,55 +231,58 @@ After a test run, open the HTML report with:
 npx playwright show-report
 ```
 
-The report shows test results by file and browser. Screenshots, videos, and traces are available only when enabled in the Playwright configuration and produced for that run.
-
 If a trace was generated for a failed test, open it with:
 
 ```bash
 npx playwright show-trace <PATH_TO_TRACE_ZIP>
 ```
 
-Replace the placeholder with the actual trace path shown in the report or test output.
+Replace the placeholder with the actual trace path shown in the test output or report. Screenshots, videos, and traces are available only when enabled in the Playwright configuration and produced for that run.
 
 ## Page Object Model
 
-The UI tests keep page-specific selectors and reusable interactions in the `pages/` directory:
+The UI tests keep page-specific locators and reusable interactions in the `pages/` directory:
 
-- `LoginPage.ts` — login-page locators and login interactions.
-- `InventoryPage.ts` — inventory, product names and prices, sorting, and add/remove actions.
-- `CartPage.ts` — cart navigation, cart items, product details, and cart actions.
+- `LoginPage.ts` — login-page locators, navigation, and authentication interaction.
+- `InventoryPage.ts` — inventory and product locators, product information, sorting, and add/remove-cart actions.
+- `CartPage.ts` — cart navigation, cart contents, product removal, and checkout navigation.
+- `CheckoutPage.ts` — customer information, order overview, and completion-page locators.
 
-Assertions and test scenarios belong in the `tests/ui/` specifications. Page objects provide reusable interactions and data-reading methods.
+Assertions and test scenarios belong in the `tests/ui/` specifications. Page objects provide reusable locators and interactions.
+
+## Test Data
+
+Non-secret checkout inputs and validation scenarios are centralized in `test-data/checkout-data.ts`. Tests import this data instead of duplicating customer details and expected validation messages in individual test cases.
 
 ## Test Isolation
 
-Tests use Playwright's test fixtures, which provide an isolated browser context for each test by default. Inventory and cart tests log in during their setup so they begin from an authenticated state, while the authentication suite tests both authenticated and unauthenticated scenarios. The authentication suite also contains a specific test verifying that separate browser contexts do not share authenticated sessions.
+Playwright's built-in `page` fixture provides an isolated browser context for each test by default. Authentication, inventory, cart, and checkout tests establish their own required login state rather than depending on another test's execution. The authentication suite also verifies that separate browser contexts do not share authenticated sessions.
 
 ## Test Documentation
 
 - [`docs/test-plan.md`](docs/test-plan.md) — project objective, scope, exclusions, test types, environments, risks, and entry/exit criteria.
-
-Add links here when additional documentation files, such as detailed test cases, findings, or defect reports, are actually added to the repository.
+- [`docs/test-execution-report.md`](docs/test-execution-report.md) — recorded regression results, cross-browser findings, investigation details, and test improvements.
 
 ## Planned API Automation: Restful Booker
 
 Restful Booker is the planned API-testing target for a later project stage. The intended coverage includes creating, retrieving, updating, partially updating, and deleting bookings; authentication; and representative invalid-input and error-response scenarios.
 
-No API test execution results are claimed in this README yet. Once API tests and Postman/Newman collections are implemented, add their actual file paths, setup requirements, execution commands, and latest verified results here.
+API tests and their execution results are not included in the current project status. Once implemented, document their actual file paths, setup requirements, execution commands, and verified results here.
 
 ## Planned Continuous Integration
 
-GitHub Actions is a planned extension. When the workflow is implemented, document its actual trigger conditions, Node.js version, browser matrix, executed test commands, and uploaded report artifacts here. Do not treat CI as active until a workflow has been committed and successfully run.
+GitHub Actions is a planned extension. Once implemented, document the actual workflow triggers, Node.js version, browser matrix, executed test commands, and uploaded report artifacts. CI should not be described as active until a workflow has been committed and successfully run.
 
 ## Known Limitations
 
-- The current automated coverage focuses on SauceDemo's login, inventory, sorting, and cart workflows.
-- Checkout form validation and order completion are not included in the current reported UI suite.
-- API automation, Postman/Newman execution, and CI results are not included in the current report.
+- Automated UI coverage currently focuses on SauceDemo authentication, inventory, shopping-cart, and checkout workflows.
+- API automation against Restful Booker is not yet implemented.
+- Postman/Newman execution is not yet implemented.
+- GitHub Actions CI execution is not yet implemented.
 - SauceDemo is a public practice service and may change or become temporarily unavailable.
-- Browser coverage is limited to the configured and executed projects.
+- Browser coverage is limited to the configured and executed browser projects.
 - Passing tests demonstrate the tested scenarios under the recorded conditions; they do not prove that the application is defect-free.
 
 ## License
 
-No license has been selected for this repository yet. Add a license file if and when one is chosen.
+No license has been specified for this repository. Add a license file if and when one is selected.
