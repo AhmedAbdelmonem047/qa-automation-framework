@@ -28,15 +28,8 @@ test("Add product to cart", async ({ page }) => {
   await inventoryPage.addProductToCart(BACKPACK);
   await expect(cartPage.cartBadge).toHaveText("1");
 
-  const backpack = inventoryPage.productItems.filter({
-    has: page.getByText(BACKPACK, { exact: true }),
-  });
-
   await expect(
-    backpack.getByRole("button", {
-      name: "Remove",
-      exact: true,
-    }),
+    inventoryPage.getProductActionButton(BACKPACK, "Remove"),
   ).toBeVisible();
 });
 
@@ -51,15 +44,8 @@ test("Remove product from inventory", async ({ page }) => {
 
   await expect(cartPage.cartBadge).toBeHidden();
 
-  const backpack = inventoryPage.productItems.filter({
-    has: page.getByText(BACKPACK, { exact: true }),
-  });
-
   await expect(
-    backpack.getByRole("button", {
-      name: "Add to cart",
-      exact: true,
-    }),
+    inventoryPage.getProductActionButton(BACKPACK, "Add to cart"),
   ).toBeVisible();
 });
 
@@ -76,14 +62,16 @@ test("Cart contains the correct products and prices", async ({ page }) => {
 
   const products = await cartPage.getAllCartProducts();
 
-  const productsByName = Object.fromEntries(
-    products.map(({ name, price }) => [name, price]),
-  );
-
-  expect(productsByName).toEqual({
-    [BACKPACK]: "$29.99",
-    [BIKE_LIGHT]: "$9.99",
-  });
+  expect(products).toEqual([
+    {
+      name: BACKPACK,
+      price: "$29.99",
+    },
+    {
+      name: BIKE_LIGHT,
+      price: "$9.99",
+    },
+  ]);
 });
 
 // Cart count reflects multiple products
@@ -128,6 +116,7 @@ test("Cart becomes empty after removing all products", async ({ page }) => {
   await inventoryPage.addProductToCart(BACKPACK);
   await inventoryPage.addProductToCart(BIKE_LIGHT);
   await cartPage.openCart();
+  await expect(cartPage.cartItems).toHaveCount(2);
   await cartPage.removeProduct(BACKPACK);
   await expect(cartPage.cartBadge).toHaveText("1");
   await cartPage.removeProduct(BIKE_LIGHT);

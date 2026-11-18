@@ -21,12 +21,15 @@ test("Product count", async ({ page }) => {
   await expect(inventoryPage.productItems).toHaveCount(6);
 });
 
-// Every product has a name and price
+// Every product has a non-empty name and price
 test("Product information", async ({ page }) => {
   const inventoryPage = new InventoryPage(page);
-  const productNames = await inventoryPage.getAllProductNames();
-  expect(productNames).toHaveLength(6);
-  expect(productNames.every((name) => name.trim().length > 0)).toBe(true);
+  const products = await inventoryPage.getAllProducts();
+  expect(products).toHaveLength(6);
+  for (const product of products) {
+    expect(product.name.trim()).not.toBe("");
+    expect(product.price.trim()).not.toBe("");
+  }
 });
 
 // Prices are sorted low to high

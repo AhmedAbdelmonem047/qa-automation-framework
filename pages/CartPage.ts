@@ -16,14 +16,16 @@ export class CartPage {
 
   constructor(page: Page) {
     this.page = page;
-
-    this.cartLink = page.locator(".shopping_cart_link");
-    this.cartBadge = page.locator(".shopping_cart_badge");
+    this.cartLink = page.locator('[data-test="shopping-cart-link"]');
+    this.cartBadge = page.locator('[data-test="shopping-cart-badge"]');
     this.cartList = page.locator(".cart_list");
-    this.cartItems = page.locator(".cart_item");
-    this.productNames = this.cartItems.locator(".inventory_item_name");
-    this.productPrices = this.cartItems.locator(".inventory_item_price");
-
+    this.cartItems = page.locator('[data-test="inventory-item"]');
+    this.productNames = this.cartItems.locator(
+      '[data-test="inventory-item-name"]',
+    );
+    this.productPrices = this.cartItems.locator(
+      '[data-test="inventory-item-price"]',
+    );
     this.continueShoppingButton = page.locator(
       '[data-test="continue-shopping"]',
     );

@@ -14,9 +14,9 @@ export class InventoryPage {
   constructor(page: Page) {
     this.page = page;
     this.productList = page.locator(".inventory_list");
-    this.productItems = page.locator(".inventory_item");
-    this.productNames = page.locator(".inventory_item_name");
-    this.productPrices = page.locator(".inventory_item_price");
+    this.productItems = page.locator('[data-test="inventory-item"]');
+    this.productNames = page.locator('[data-test="inventory-item-name"]');
+    this.productPrices = page.locator('[data-test="inventory-item-price"]');
     this.sortDropdown = page.locator('[data-test="product-sort-container"]');
   }
 
@@ -24,6 +24,17 @@ export class InventoryPage {
   private getProductCard(productName: string): Locator {
     return this.productItems.filter({
       has: this.page.getByText(productName, { exact: true }),
+    });
+  }
+
+  // Get a specific product's cart action button
+  getProductActionButton(
+    productName: string,
+    action: "Add to cart" | "Remove",
+  ): Locator {
+    return this.getProductCard(productName).getByRole("button", {
+      name: action,
+      exact: true,
     });
   }
 
@@ -45,7 +56,7 @@ export class InventoryPage {
   async getProductPrice(productName: string): Promise<string> {
     return (
       await this.getProductCard(productName)
-        .locator(".inventory_item_price")
+        .locator('[data-test="inventory-item-price"]')
         .innerText()
     ).trim();
   }
@@ -59,8 +70,12 @@ export class InventoryPage {
 
     for (let i = 0; i < count; i++) {
       const product = this.productItems.nth(i);
-      const name = await product.locator(".inventory_item_name").innerText();
-      const price = await product.locator(".inventory_item_price").innerText();
+      const name = await product
+        .locator('[data-test="inventory-item-name"]')
+        .innerText();
+      const price = await product
+        .locator('[data-test="inventory-item-price"]')
+        .innerText();
 
       products.push({
         name: name.trim(),
@@ -78,14 +93,14 @@ export class InventoryPage {
   // Add product to cart
   async addProductToCart(productName: string): Promise<void> {
     await this.getProductCard(productName)
-      .getByRole("button", { name: "Add to cart" })
+      .getByRole("button", { name: "Add to cart", exact: true })
       .click();
   }
 
   // Remove product from cart
   async removeProductFromCart(productName: string): Promise<void> {
     await this.getProductCard(productName)
-      .getByRole("button", { name: "Remove" })
+      .getByRole("button", { name: "Remove", exact: true })
       .click();
   }
 }

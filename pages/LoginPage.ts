@@ -11,19 +11,22 @@ export class LoginPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.usernameInput = page.locator("#user-name");
-    this.passwordInput = page.locator("#password");
-    this.loginButton = page.locator("#login-button");
+    this.usernameInput = page.locator('[data-test="username"]');
+    this.passwordInput = page.locator('[data-test="password"]');
+    this.loginButton = page.getByRole("button", {
+      name: "Login",
+      exact: true,
+    });
     this.errorMessage = page.locator('[data-test="error"]');
   }
 
   // Navigate to login page
-  async navigate() {
+  async navigate(): Promise<void> {
     await this.page.goto("/");
   }
 
   // Login using username and password
-  async login(username: string, password: string) {
+  async login(username: string, password: string): Promise<void> {
     await this.usernameInput.fill(username);
     await this.passwordInput.fill(password);
     await this.loginButton.click();
