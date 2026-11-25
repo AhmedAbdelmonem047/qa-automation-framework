@@ -16,20 +16,27 @@ export class CartPage {
 
   constructor(page: Page) {
     this.page = page;
+
     this.cartLink = page.locator('[data-test="shopping-cart-link"]');
     this.cartBadge = page.locator('[data-test="shopping-cart-badge"]');
     this.cartList = page.locator(".cart_list");
     this.cartItems = page.locator('[data-test="inventory-item"]');
+
     this.productNames = this.cartItems.locator(
       '[data-test="inventory-item-name"]',
     );
     this.productPrices = this.cartItems.locator(
       '[data-test="inventory-item-price"]',
     );
-    this.continueShoppingButton = page.locator(
-      '[data-test="continue-shopping"]',
-    );
-    this.checkoutButton = page.locator('[data-test="checkout"]');
+
+    this.continueShoppingButton = page.getByRole("button", {
+      name: "Continue Shopping",
+      exact: true,
+    });
+    this.checkoutButton = page.getByRole("button", {
+      name: "Checkout",
+      exact: true,
+    });
   }
 
   // Navigate to cart
@@ -40,12 +47,14 @@ export class CartPage {
   // Get all product names in cart
   async getAllCartProductNames(): Promise<string[]> {
     await this.cartList.waitFor({ state: "visible" });
+
     return (await this.productNames.allInnerTexts()).map((name) => name.trim());
   }
 
   // Get all product prices in cart
   async getAllCartProductPrices(): Promise<string[]> {
     await this.cartList.waitFor({ state: "visible" });
+
     return (await this.productPrices.allInnerTexts()).map((price) =>
       price.trim(),
     );
@@ -60,14 +69,21 @@ export class CartPage {
 
     for (let i = 0; i < count; i++) {
       const item = this.cartItems.nth(i);
-      const name = await item.locator(".inventory_item_name").innerText();
-      const price = await item.locator(".inventory_item_price").innerText();
+
+      const name = await item
+        .locator('[data-test="inventory-item-name"]')
+        .innerText();
+
+      const price = await item
+        .locator('[data-test="inventory-item-price"]')
+        .innerText();
 
       products.push({
         name: name.trim(),
         price: price.trim(),
       });
     }
+
     return products;
   }
 

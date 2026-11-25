@@ -28,13 +28,28 @@ export class CheckoutPage {
   constructor(page: Page) {
     this.page = page;
 
-    this.firstNameInput = page.locator('[data-test="firstName"]');
-    this.lastNameInput = page.locator('[data-test="lastName"]');
-    this.postalCodeInput = page.locator('[data-test="postalCode"]');
-    this.continueButton = page.locator('[data-test="continue"]');
-    this.cancelButton = page.locator('[data-test="cancel"]');
+    // Customer information
+    this.firstNameInput = page.getByPlaceholder("First Name", {
+      exact: true,
+    });
+    this.lastNameInput = page.getByPlaceholder("Last Name", {
+      exact: true,
+    });
+    this.postalCodeInput = page.getByPlaceholder("Zip/Postal Code", {
+      exact: true,
+    });
+
+    this.continueButton = page.getByRole("button", {
+      name: "Continue",
+      exact: true,
+    });
+    this.cancelButton = page.getByRole("button", {
+      name: "Cancel",
+      exact: true,
+    });
     this.errorMessage = page.locator('[data-test="error"]');
 
+    // Order overview
     this.cartItems = page.locator('[data-test="inventory-item"]');
     this.paymentInformation = page.locator('[data-test="payment-info-value"]');
     this.shippingInformation = page.locator(
@@ -43,10 +58,26 @@ export class CheckoutPage {
     this.subtotalLabel = page.locator('[data-test="subtotal-label"]');
     this.taxLabel = page.locator('[data-test="tax-label"]');
     this.totalLabel = page.locator('[data-test="total-label"]');
-    this.finishButton = page.locator('[data-test="finish"]');
 
-    this.completionHeader = page.locator('[data-test="complete-header"]');
-    this.completionMessage = page.locator('[data-test="complete-text"]');
-    this.backToProductsButton = page.locator('[data-test="back-to-products"]');
+    this.finishButton = page.getByRole("button", {
+      name: "Finish",
+      exact: true,
+    });
+
+    // Completion page
+    this.completionHeader = page.getByRole("heading", {
+      name: "Thank you for your order!",
+      exact: true,
+    });
+
+    this.completionMessage = page.getByText(
+      "Your order has been dispatched, and will arrive just as fast as the pony can get there!",
+      { exact: true },
+    );
+
+    this.backToProductsButton = page.getByRole("button", {
+      name: "Back Home",
+      exact: true,
+    });
   }
 }

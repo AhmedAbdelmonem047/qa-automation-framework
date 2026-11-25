@@ -1,4 +1,4 @@
-import { Page, Locator } from "@playwright/test";
+import { type Page, type Locator } from "@playwright/test";
 
 export type ProductSortOption = "az" | "za" | "lohi" | "hilo";
 
@@ -13,11 +13,16 @@ export class InventoryPage {
 
   constructor(page: Page) {
     this.page = page;
+
     this.productList = page.locator(".inventory_list");
     this.productItems = page.locator('[data-test="inventory-item"]');
-    this.productNames = page.locator('[data-test="inventory-item-name"]');
-    this.productPrices = page.locator('[data-test="inventory-item-price"]');
-    this.sortDropdown = page.locator('[data-test="product-sort-container"]');
+    this.productNames = this.productItems.locator(
+      '[data-test="inventory-item-name"]',
+    );
+    this.productPrices = this.productItems.locator(
+      '[data-test="inventory-item-price"]',
+    );
+    this.sortDropdown = page.getByRole("combobox");
   }
 
   // Internal helper
@@ -41,12 +46,14 @@ export class InventoryPage {
   // Read all product names
   async getAllProductNames(): Promise<string[]> {
     await this.productList.waitFor({ state: "visible" });
+
     return (await this.productNames.allInnerTexts()).map((name) => name.trim());
   }
 
   // Read all product prices
   async getAllProductPrices(): Promise<string[]> {
     await this.productList.waitFor({ state: "visible" });
+
     return (await this.productPrices.allInnerTexts()).map((price) =>
       price.trim(),
     );
@@ -70,9 +77,11 @@ export class InventoryPage {
 
     for (let i = 0; i < count; i++) {
       const product = this.productItems.nth(i);
+
       const name = await product
         .locator('[data-test="inventory-item-name"]')
         .innerText();
+
       const price = await product
         .locator('[data-test="inventory-item-price"]')
         .innerText();
@@ -82,6 +91,7 @@ export class InventoryPage {
         price: price.trim(),
       });
     }
+
     return products;
   }
 
@@ -92,15 +102,11 @@ export class InventoryPage {
 
   // Add product to cart
   async addProductToCart(productName: string): Promise<void> {
-    await this.getProductCard(productName)
-      .getByRole("button", { name: "Add to cart", exact: true })
-      .click();
+    await this.getProductActionButton(productName, "Add to cart").click();
   }
 
   // Remove product from cart
   async removeProductFromCart(productName: string): Promise<void> {
-    await this.getProductCard(productName)
-      .getByRole("button", { name: "Remove", exact: true })
-      .click();
+    await this.getProductActionButton(productName, "Remove").click();
   }
 }
