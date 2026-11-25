@@ -2,7 +2,7 @@
 
 A portfolio test-automation project built with **Playwright, TypeScript, and the Page Object Model (POM)**.
 
-The current implementation automates UI workflows on [SauceDemo](https://www.saucedemo.com), a public e-commerce practice application. It covers authentication, inventory, shopping-cart operations, and checkout. API automation and continuous integration are planned extensions.
+The current implementation automates UI workflows on [SauceDemo](https://www.saucedemo.com), a public e-commerce practice application. It covers authentication, inventory, shopping-cart operations, and checkout, including end-to-end purchase exercises, negative scenarios, selector improvements, shared-locator refactoring, and Chromium/Firefox verification. API automation and continuous integration are planned extensions.
 
 > SauceDemo is a public demo service and is not owned by this project. Its availability and behavior may change. Test results in this README describe a recorded run; they do not guarantee future availability or prove that the application is defect-free.
 
@@ -18,6 +18,12 @@ The current implementation automates UI workflows on [SauceDemo](https://www.sau
 - End-to-end purchase and checkout required-field validation tests.
 - Centralized typed checkout test data.
 - Playwright HTML test reporting.
+
+### Completed checkout coverage and refactoring
+
+The completed work includes reviewing page-object selectors and preferring accessible user-facing locators where appropriate; implementing end-to-end product selection, cart, and checkout exercises; adding exact product, price, cart-count, order-summary, calculation, and confirmation assertions; adding negative checkout and empty-cart scenarios; documenting unavailable-product coverage as not applicable because the practice application exposes no reliable stock state; and removing duplicated product-locator definitions.
+
+The latest Chromium/Firefox verification reported **102 tests passed and 0 failed**. Individual per-browser counts and the execution date were not supplied, so this README does not assign a split or date to that result.
 
 ### Planned extensions
 
@@ -37,7 +43,7 @@ Planned items are not part of the current tested coverage.
 
 ## Test Coverage
 
-The current UI suite contains **30 distinct test cases**. The latest recorded regression run executed these tests across three browser projects, resulting in **90 successful test executions**.
+The November 18, 2026 historical baseline contained 30 distinct test cases and 90 successful executions across Chromium, Firefox, and WebKit. The later Chromium/Firefox verification is recorded separately below.
 
 ### Authentication — `tests/ui/auth.spec.ts`
 
@@ -84,22 +90,51 @@ The current UI suite contains **30 distinct test cases**. The latest recorded re
 - Reject checkout when the last name is missing.
 - Reject checkout when the postal code is missing.
 
-## Latest Recorded Test Run
+### End-to-End Checkout Exercises — `tests/checkout/product-checkout.spec.ts`
 
-The latest full regression run was completed on **November 18, 2026**.
+A separate end-to-end exercise spec complements the existing UI suites. The exercised scenarios are:
 
-| Item                |                    Result |
-| ------------------- | ------------------------: |
-| Distinct test cases |                        30 |
-| Browser projects    | Chromium, Firefox, WebKit |
-| Total executions    |                        90 |
-| Passed              |                        90 |
-| Failed              |                         0 |
-| Pass rate           |                      100% |
+- Add multiple products and verify exact cart product names, prices, and badge count.
+- Remove a selected product and verify the remaining product, price, and cart count.
+- Navigate back to inventory and confirm that the remaining cart state persists.
+- Validate checkout rejection when first name, last name, or postal code is missing.
+- Complete a purchase and verify checkout product names/prices, item subtotal, tax, total, arithmetic consistency, and final confirmation.
+- Verify and document empty-cart checkout behavior as an application-behavior investigation, not as a desired business rule. The test checks the zero-value summary and stops before order submission.
+- Record unavailable-product testing as N/A because the practice application does not expose a reliable out-of-stock or availability state.
 
-All 30 test cases passed in each configured browser project in this recorded run. This is a snapshot of one run, not a guarantee that future runs will have the same result.
+**Implementation and verification status: Completed.** The end-to-end test scenarios and assertions were implemented, the shared product-locator refactor was completed and committed, and the Chromium/Firefox validation reported 102 passed with 0 failures. This is a separate, later verification result and is not added to the November 18 historical baseline.
 
-See [`docs/test-execution-report.md`](docs/test-execution-report.md) for the execution findings, WebKit investigations, and verification details.
+## Latest Chromium/Firefox Verification
+
+The latest validation reported the following result for the Chromium and Firefox suites:
+
+| Item                     |            Result |
+| ------------------------ | ----------------: |
+| Tests reported           |               102 |
+| Passed                   |               102 |
+| Failed                   |                 0 |
+| Pass rate                |              100% |
+| Browser projects         | Chromium, Firefox |
+| Per-browser result split |      Not supplied |
+| Execution date           |      Not supplied |
+
+All 102 reported tests passed. The per-browser breakdown and execution date were not provided, so they are intentionally not inferred.
+
+### Historical three-browser baseline — November 18, 2026
+
+The earlier recorded regression run covered 30 distinct test cases across Chromium, Firefox, and WebKit:
+
+| Item                | Result |
+| ------------------- | -----: |
+| Distinct test cases |     30 |
+| Total executions    |     90 |
+| Passed              |     90 |
+| Failed              |      0 |
+| Pass rate           |   100% |
+
+This historical run is retained as a separate baseline and is not combined with the later Chromium/Firefox result.
+
+See [`docs/test-execution-report.md`](docs/test-execution-report.md) for checkout coverage, the historical WebKit investigations, and execution details.
 
 ## Repository Structure
 
@@ -118,11 +153,13 @@ qa-automation-framework/
 ├── test-data/
 │   └── checkout-data.ts
 ├── tests/
-│   └── ui/
-│       ├── auth.spec.ts
-│       ├── inventory.spec.ts
-│       ├── cart.spec.ts
-│       └── checkout.spec.ts
+│   ├── ui/
+│   │   ├── auth.spec.ts
+│   │   ├── inventory.spec.ts
+│   │   ├── cart.spec.ts
+│   │   └── checkout.spec.ts
+│   └── checkout/
+│       └── product-checkout.spec.ts  # End-to-end checkout exercises
 ├── playwright.config.ts
 ├── package.json
 ├── package-lock.json
@@ -179,10 +216,23 @@ Run the complete test suite across all configured browser projects:
 npx playwright test
 ```
 
-Run all UI tests:
+Run the existing UI tests:
 
 ```bash
 npx playwright test tests/ui
+```
+
+Run the end-to-end checkout exercise spec:
+
+```bash
+npx playwright test tests/checkout/product-checkout.spec.ts
+```
+
+Run the checkout exercises in Chromium and Firefox separately:
+
+```bash
+npx playwright test tests/checkout/product-checkout.spec.ts --project=chromium
+npx playwright test tests/checkout/product-checkout.spec.ts --project=firefox
 ```
 
 Run an individual suite:
@@ -248,7 +298,7 @@ The UI tests keep page-specific locators and reusable interactions in the `pages
 - `CartPage.ts` — cart navigation, cart contents, product removal, and checkout navigation.
 - `CheckoutPage.ts` — customer information, order overview, and completion-page locators.
 
-Assertions and test scenarios belong in the `tests/ui/` specifications. Page objects provide reusable locators and interactions.
+Assertions and test scenarios belong in the `tests/ui/` and `tests/checkout/` specifications. Page objects provide reusable locators and interactions. The selector strategy prioritizes accessible user-facing locators (`getByRole()`, `getByLabel()`, `getByText()`, and `getByPlaceholder()`) where suitable, while retaining stable `data-test` and structural selectors for elements that do not have a useful semantic locator.
 
 ## Test Data
 
@@ -280,6 +330,9 @@ GitHub Actions is a planned extension. Once implemented, document the actual wor
 - Postman/Newman execution is not yet implemented.
 - GitHub Actions CI execution is not yet implemented.
 - SauceDemo is a public practice service and may change or become temporarily unavailable.
+- The empty-cart scenario is covered as a behavior investigation; the test verifies the observed zero-item checkout summary without submitting an empty order.
+- Unavailable-product testing is documented as N/A because the standard practice application does not expose a reliable stock/availability state.
+- The November 18 three-browser baseline and the later Chromium/Firefox verification are separate runs with separate totals.
 - Browser coverage is limited to the configured and executed browser projects.
 - Passing tests demonstrate the tested scenarios under the recorded conditions; they do not prove that the application is defect-free.
 

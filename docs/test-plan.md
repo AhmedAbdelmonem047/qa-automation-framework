@@ -2,13 +2,13 @@
 
 ## 1. Document Information
 
-| Item | Value |
-| --- | --- |
-| Project | QA Automation Framework |
-| Repository | `qa-automation-framework` |
-| Status | Initial test plan |
-| Primary tools | Playwright, TypeScript, Postman, Newman, GitHub Actions |
-| UI application under test | SauceDemo — <https://www.saucedemo.com> |
+| Item                       | Value                                                   |
+| -------------------------- | ------------------------------------------------------- |
+| Project                    | QA Automation Framework                                 |
+| Repository                 | `qa-automation-framework`                               |
+| Status                     | Maintained test plan; current UI exercises implemented  |
+| Primary tools              | Playwright, TypeScript, Postman, Newman, GitHub Actions |
+| UI application under test  | SauceDemo — <https://www.saucedemo.com>                 |
 | API application under test | Restful Booker — <https://restful-booker.herokuapp.com> |
 
 This document describes the intended testing scope and execution approach for this portfolio project. Update it when the implementation or target applications change.
@@ -53,7 +53,15 @@ The API is a shared public demo service. Its data and availability may change in
 - Adding and removing products from the cart.
 - Cart contents and item counts.
 - Checkout form validation.
-- Completing the standard checkout journey.
+- Completing standard checkout journeys from inventory through order confirmation.
+- End-to-end selection of multiple products, cart review, removal, and cart persistence.
+- Exact assertions for product names and prices in inventory/cart/checkout views.
+- Cart badge and cart-item count assertions after add/remove operations.
+- Checkout summary assertions for item subtotal, tax, and final total, including arithmetic consistency.
+- Final order-confirmation heading and message assertions.
+- Negative checkout validation for missing first name, last name, and postal code.
+- Empty-cart checkout behavior investigation, with the observed result documented rather than assumed.
+- Unavailable-product testing only where the application exposes a reliable availability/out-of-stock state.
 - Appropriate assertions for navigation, visible feedback, and key page state.
 
 ### 4.2 In Scope — API Tests
@@ -92,6 +100,7 @@ The following are intentionally outside this project's scope:
 - Load, stress, endurance, and capacity testing.
 - Native mobile application testing.
 - Accessibility certification or a complete WCAG conformance audit.
+- Unavailable-product automation when the selected practice application does not expose a testable stock or availability state. Record this as not applicable (N/A), rather than inventing an unsupported flow.
 - Testing the internal implementation or source code of the demo applications.
 - Guaranteeing availability or data stability of the public demo services.
 
@@ -99,18 +108,19 @@ These exclusions may be revisited in a future project, but they are not required
 
 ## 6. Test Types
 
-| Test type | Application / layer | Purpose |
-| --- | --- | --- |
-| Functional UI | SauceDemo | Verify key user-facing features and workflows |
-| Negative UI | SauceDemo | Verify invalid input and rejected user actions |
-| UI regression | SauceDemo | Re-run critical journeys after changes |
-| API functional | Restful Booker | Verify supported endpoint behavior |
-| API negative | Restful Booker | Verify invalid, missing, or unauthorized requests |
-| API contract / schema checks | Restful Booker | Check response structure and important data types |
-| Integration-flow checks | Framework test layer | Verify selected sequences across related API operations |
-| Smoke checks | UI and API | Quickly verify that critical paths are working |
-| Cross-browser checks | SauceDemo | Run selected UI coverage in configured Playwright browsers |
-| CI checks | Repository | Verify that tests can run in a clean automated environment |
+| Test type                    | Application / layer  | Purpose                                                                          |
+| ---------------------------- | -------------------- | -------------------------------------------------------------------------------- |
+| Functional UI                | SauceDemo            | Verify key user-facing features and workflows                                    |
+| Negative UI                  | SauceDemo            | Verify invalid input, required-field validation, and negative checkout behavior  |
+| Boundary / empty-state UI    | SauceDemo            | Verify empty-cart state and document whether checkout is permitted without items |
+| UI regression                | SauceDemo            | Re-run critical journeys after changes                                           |
+| API functional               | Restful Booker       | Verify supported endpoint behavior                                               |
+| API negative                 | Restful Booker       | Verify invalid, missing, or unauthorized requests                                |
+| API contract / schema checks | Restful Booker       | Check response structure and important data types                                |
+| Integration-flow checks      | Framework test layer | Verify selected sequences across related API operations                          |
+| Smoke checks                 | UI and API           | Quickly verify that critical paths are working                                   |
+| Cross-browser checks         | SauceDemo            | Run selected UI coverage in configured Playwright browsers                       |
+| CI checks                    | Repository           | Verify that tests can run in a clean automated environment                       |
 
 Cross-browser coverage should be limited to the browsers configured in `playwright.config.ts`; do not claim coverage for browsers that have not actually been run.
 
@@ -121,8 +131,11 @@ Cross-browser coverage should be limited to the browsers configured in `playwrig
 - Use Playwright Test with TypeScript.
 - Keep page-specific selectors and actions in page objects under `pages/`.
 - Keep reusable setup in fixtures under `fixtures/`.
-- Keep test scenarios in `tests/ui/`.
-- Prefer user-visible locators and stable accessible attributes.
+- Keep established UI test scenarios in `tests/ui/` and end-to-end checkout exercises in `tests/checkout/`.
+- Prefer semantic, user-facing locators in this order where appropriate: `getByRole()`, `getByLabel()`, `getByText()`, and `getByPlaceholder()`.
+- Retain stable `data-test` selectors for elements without a useful accessible locator, data extraction, and application-specific containers; use CSS selectors for structural containers where appropriate. Do not convert every selector indiscriminately.
+- Keep repeated product item/name/price selector definitions in a shared helper where that refactor is implemented, while keeping page-specific interactions in their page objects.
+- Use web-first assertions for product names, prices, cart counts, checkout summary values, navigation, and final confirmation.
 - Avoid fixed sleeps. Use Playwright's auto-waiting and explicit state assertions.
 - Keep test data separate from test logic.
 - Capture screenshots and traces on failure; retain the HTML report as an execution artifact where configured.
@@ -140,14 +153,35 @@ Cross-browser coverage should be limited to the browsers configured in `playwrig
 
 Tests should not rely on another test having run first. Use unique test data when possible, avoid assumptions about records in the shared public API, and clean up created records when practical. If the external service is unavailable or rate-limited, record the run as blocked by the dependency rather than treating it as an application defect.
 
-## 8. Test Environments
+## 8. End-to-End UI Exercise Coverage
 
-| Environment | Purpose | Configuration |
-| --- | --- | --- |
-| Local development | Authoring and debugging tests | Developer machine, supported Node.js version, project dependencies, browser binaries |
-| GitHub Actions | Repeatable automated execution | Clean runner, Node.js version pinned in workflow, dependencies installed from lockfile, Playwright browsers installed |
-| SauceDemo | UI system under test | `https://www.saucedemo.com` |
-| Restful Booker | API system under test | `https://restful-booker.herokuapp.com` |
+The SauceDemo UI scope includes end-to-end exercises for product selection, cart management, checkout, negative validation, and selector maintainability. The latest Chromium/Firefox verification reported 102 tests passed and 0 failed. Individual per-browser counts and the execution date were not supplied; the test execution report records those limitations.
+
+| Area                                             | Coverage / engineering activity                                                                                                                                                                                                                               | Completion evidence                                                                                                        |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Selector review                                  | Reviewed page-object selectors and preferred `getByRole()`, `getByLabel()`, `getByText()`, and `getByPlaceholder()` where they reliably identify user-facing controls. Retained `data-test` and structural selectors where semantic locators were unsuitable. | Selector review and page-object updates completed.                                                                         |
+| End-to-end product, cart, and checkout exercises | Added multiple products, inspected cart contents, removed a product, returned to inventory, verified cart persistence, and completed checkout.                                                                                                                | End-to-end exercise spec completed and included in the reported passing test run.                                          |
+| Purchase assertions                              | Added exact product-name and price assertions, cart item/badge counts, checkout product summary, item subtotal, tax, total, arithmetic consistency, and final confirmation checks.                                                                            | Assertions completed and included in the reported passing test run.                                                        |
+| Negative and unsupported scenarios               | Added missing-field checkout validation and an empty-cart behavior investigation. Unavailable-product coverage is N/A because the practice application does not expose a reliable stock/availability state.                                                   | Negative and empty-cart scenarios included in the reported passing test run; unsupported stock scenario documented as N/A. |
+| Cross-browser verification and locator refactor  | Removed duplicated product item/name/price locator definitions, ran the required suites in Chromium and Firefox, reviewed the changes, and committed the refactor.                                                                                            | Verification reported 102 passed and 0 failed across Chromium and Firefox; refactor committed.                             |
+
+### Verification notes
+
+- Keep each end-to-end test independent: it should establish its own login state and required cart state.
+- Use web-first assertions for cart item counts, product names, prices, navigation, and checkout results to reduce timing-related flakiness.
+- Verify subtotal, tax, and total against expected values and check the arithmetic relationship using the displayed amounts.
+- The empty-cart test records the observed zero-value checkout summary and stops before submitting an empty order. Treat this as an application-behavior observation, not a desired business rule.
+- Unavailable-product testing is N/A because the practice application does not expose a reliable out-of-stock or stock-availability state.
+- The latest Chromium/Firefox validation reported 102 passed and 0 failed. The November 18, 2026 three-browser baseline remains a separate earlier run.
+
+## 9. Test Environments
+
+| Environment       | Purpose                        | Configuration                                                                                                         |
+| ----------------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| Local development | Authoring and debugging tests  | Developer machine, supported Node.js version, project dependencies, browser binaries                                  |
+| GitHub Actions    | Repeatable automated execution | Clean runner, Node.js version pinned in workflow, dependencies installed from lockfile, Playwright browsers installed |
+| SauceDemo         | UI system under test           | `https://www.saucedemo.com`                                                                                           |
+| Restful Booker    | API system under test          | `https://restful-booker.herokuapp.com`                                                                                |
 
 ### Configuration rules
 
@@ -158,20 +192,20 @@ Tests should not rely on another test having run first. Use unique test data whe
 - Make the selected browser projects and retry behavior explicit in `playwright.config.ts`.
 - The public API may be intermittently unavailable; document the date and effect of any blocked run.
 
-## 9. Risks and Mitigations
+## 10. Risks and Mitigations
 
-| Risk | Impact | Mitigation |
-| --- | --- | --- |
+| Risk                                      | Impact                                                    | Mitigation                                                                                                    |
+| ----------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | Public demo API downtime or rate limiting | API tests may fail for reasons unrelated to the framework | Keep tests independently runnable; distinguish service outages from test failures; retry only where justified |
-| Shared API data changes | Tests may become order-dependent or flaky | Create unique records, avoid fixed IDs, and clean up created data |
-| UI changes in SauceDemo | Selectors or expected behavior may change | Prefer stable, user-facing locators and centralize selectors in page objects |
-| Flaky timing or network behavior | Intermittent failures reduce confidence | Use Playwright auto-waiting and condition-based assertions; avoid arbitrary sleeps |
-| Secrets accidentally committed | Credential exposure | Use environment variables and GitHub repository secrets; review files before committing |
-| Browser or dependency version mismatch | Local and CI results differ | Commit the lockfile and install dependencies reproducibly with `npm ci` |
-| Incomplete test data cleanup | Later runs become unreliable | Use unique data and cleanup steps; make cleanup failures visible |
-| Overly broad test coverage | Suite becomes slow and difficult to maintain | Prioritize critical flows and keep smoke checks separate from broader regression runs |
+| Shared API data changes                   | Tests may become order-dependent or flaky                 | Create unique records, avoid fixed IDs, and clean up created data                                             |
+| UI changes in SauceDemo                   | Selectors or expected behavior may change                 | Prefer stable, user-facing locators and centralize selectors in page objects                                  |
+| Flaky timing or network behavior          | Intermittent failures reduce confidence                   | Use Playwright auto-waiting and condition-based assertions; avoid arbitrary sleeps                            |
+| Secrets accidentally committed            | Credential exposure                                       | Use environment variables and GitHub repository secrets; review files before committing                       |
+| Browser or dependency version mismatch    | Local and CI results differ                               | Commit the lockfile and install dependencies reproducibly with `npm ci`                                       |
+| Incomplete test data cleanup              | Later runs become unreliable                              | Use unique data and cleanup steps; make cleanup failures visible                                              |
+| Overly broad test coverage                | Suite becomes slow and difficult to maintain              | Prioritize critical flows and keep smoke checks separate from broader regression runs                         |
 
-## 10. Entry Criteria
+## 11. Entry Criteria
 
 Testing may begin when:
 
@@ -185,7 +219,7 @@ Testing may begin when:
 
 For CI execution, the workflow must be configured with the required Node.js version and secrets, if any.
 
-## 11. Exit Criteria
+## 12. Exit Criteria
 
 A test run can be considered complete when:
 
@@ -198,7 +232,7 @@ A test run can be considered complete when:
 
 A project milestone is ready for completion when the planned critical UI and API scenarios are implemented, the documented local commands work, and the GitHub Actions workflow completes successfully in a clean run. A passing run is evidence for the tested scope only; it is not proof that the applications are defect-free.
 
-## 12. Deliverables
+## 13. Deliverables
 
 - Playwright + TypeScript framework and configuration.
 - UI tests for SauceDemo.
@@ -211,6 +245,6 @@ A project milestone is ready for completion when the planned critical UI and API
 - `README.md` with setup and run instructions.
 - Test documentation under `docs/`, including this test plan.
 
-## 13. Review and Maintenance
+## 14. Review and Maintenance
 
 Review this plan when the target applications, test scope, configuration, or framework structure changes. Keep the README commands aligned with the actual `package.json` scripts and CI workflow. Do not document a test, browser, or CI capability as implemented until it has been added and executed successfully.
