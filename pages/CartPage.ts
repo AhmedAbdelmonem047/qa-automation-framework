@@ -1,4 +1,8 @@
 import { type Page, type Locator } from "@playwright/test";
+import {
+  createProductLocators,
+  PRODUCT_ITEM_SELECTOR,
+} from "./helpers/productLocators";
 
 export class CartPage {
   readonly page: Page;
@@ -19,15 +23,14 @@ export class CartPage {
 
     this.cartLink = page.locator('[data-test="shopping-cart-link"]');
     this.cartBadge = page.locator('[data-test="shopping-cart-badge"]');
-    this.cartList = page.locator(".cart_list");
-    this.cartItems = page.locator('[data-test="inventory-item"]');
 
-    this.productNames = this.cartItems.locator(
-      '[data-test="inventory-item-name"]',
-    );
-    this.productPrices = this.cartItems.locator(
-      '[data-test="inventory-item-price"]',
-    );
+    this.cartList = page.locator(".cart_list");
+    this.cartItems = page.locator(PRODUCT_ITEM_SELECTOR);
+
+    const productLocators = createProductLocators(this.cartItems);
+
+    this.productNames = productLocators.productNames;
+    this.productPrices = productLocators.productPrices;
 
     this.continueShoppingButton = page.getByRole("button", {
       name: "Continue Shopping",
@@ -68,15 +71,8 @@ export class CartPage {
     const products: { name: string; price: string }[] = [];
 
     for (let i = 0; i < count; i++) {
-      const item = this.cartItems.nth(i);
-
-      const name = await item
-        .locator('[data-test="inventory-item-name"]')
-        .innerText();
-
-      const price = await item
-        .locator('[data-test="inventory-item-price"]')
-        .innerText();
+      const name = await this.productNames.nth(i).innerText();
+      const price = await this.productPrices.nth(i).innerText();
 
       products.push({
         name: name.trim(),

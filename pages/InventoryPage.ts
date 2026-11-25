@@ -1,4 +1,9 @@
 import { type Page, type Locator } from "@playwright/test";
+import {
+  createProductLocators,
+  PRODUCT_ITEM_SELECTOR,
+  PRODUCT_PRICE_SELECTOR,
+} from "./helpers/productLocators";
 
 export type ProductSortOption = "az" | "za" | "lohi" | "hilo";
 
@@ -15,13 +20,12 @@ export class InventoryPage {
     this.page = page;
 
     this.productList = page.locator(".inventory_list");
-    this.productItems = page.locator('[data-test="inventory-item"]');
-    this.productNames = this.productItems.locator(
-      '[data-test="inventory-item-name"]',
-    );
-    this.productPrices = this.productItems.locator(
-      '[data-test="inventory-item-price"]',
-    );
+    this.productItems = page.locator(PRODUCT_ITEM_SELECTOR);
+
+    const productLocators = createProductLocators(this.productItems);
+    this.productNames = productLocators.productNames;
+    this.productPrices = productLocators.productPrices;
+
     this.sortDropdown = page.getByRole("combobox");
   }
 
@@ -63,7 +67,7 @@ export class InventoryPage {
   async getProductPrice(productName: string): Promise<string> {
     return (
       await this.getProductCard(productName)
-        .locator('[data-test="inventory-item-price"]')
+        .locator(PRODUCT_PRICE_SELECTOR)
         .innerText()
     ).trim();
   }
@@ -76,15 +80,8 @@ export class InventoryPage {
     const products: { name: string; price: string }[] = [];
 
     for (let i = 0; i < count; i++) {
-      const product = this.productItems.nth(i);
-
-      const name = await product
-        .locator('[data-test="inventory-item-name"]')
-        .innerText();
-
-      const price = await product
-        .locator('[data-test="inventory-item-price"]')
-        .innerText();
+      const name = await this.productNames.nth(i).innerText();
+      const price = await this.productPrices.nth(i).innerText();
 
       products.push({
         name: name.trim(),

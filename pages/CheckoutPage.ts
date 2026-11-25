@@ -1,4 +1,8 @@
 import { type Page, type Locator } from "@playwright/test";
+import {
+  createProductLocators,
+  PRODUCT_ITEM_SELECTOR,
+} from "./helpers/productLocators";
 
 export class CheckoutPage {
   readonly page: Page;
@@ -52,14 +56,12 @@ export class CheckoutPage {
     this.errorMessage = page.locator('[data-test="error"]');
 
     // Order overview
-    this.cartItems = page.locator('[data-test="inventory-item"]');
-    this.productNames = this.cartItems.locator(
-      '[data-test="inventory-item-name"]',
-    );
+    this.cartItems = page.locator(PRODUCT_ITEM_SELECTOR);
 
-    this.productPrices = this.cartItems.locator(
-      '[data-test="inventory-item-price"]',
-    );
+    const productLocators = createProductLocators(this.cartItems);
+
+    this.productNames = productLocators.productNames;
+    this.productPrices = productLocators.productPrices;
 
     this.paymentInformation = page.locator('[data-test="payment-info-value"]');
     this.shippingInformation = page.locator(
