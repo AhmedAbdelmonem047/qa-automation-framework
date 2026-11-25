@@ -5,6 +5,17 @@ import { InventoryPage } from "../../pages/InventoryPage";
 import { CartPage } from "../../pages/CartPage";
 import { CheckoutPage } from "../../pages/CheckoutPage";
 
+// Extract a monetary amount from a displayed label.
+function extractAmount(text: string): number {
+  const match = text.match(/\$([\d,]+\.\d{2})/);
+
+  if (!match) {
+    throw new Error(`Could not extract amount from: ${text}`);
+  }
+
+  return Number(match[1].replace(/,/g, ""));
+}
+
 test.describe("Product Selection, Cart and Checkout", () => {
   let inventoryPage: InventoryPage;
   let cartPage: CartPage;
@@ -19,6 +30,9 @@ test.describe("Product Selection, Cart and Checkout", () => {
 
     await loginPage.navigate();
     await loginPage.login("standard_user", "secret_sauce");
+
+    // Wait for inventory to load before starting each test.
+    await expect(inventoryPage.productList).toBeVisible();
   });
 
   test("should add multiple products and manage the shopping cart", async () => {
@@ -26,19 +40,21 @@ test.describe("Product Selection, Cart and Checkout", () => {
     await inventoryPage.addProductToCart("Sauce Labs Backpack");
     await inventoryPage.addProductToCart("Sauce Labs Bike Light");
 
-    // Verify cart badge
+    // Verify cart count
     await expect(cartPage.cartBadge).toHaveText("2");
 
     // Open cart
     await cartPage.openCart();
 
-    // Verify selected products
+    // Verify cart contents
     await expect(cartPage.cartItems).toHaveCount(2);
 
-    await expect(cartPage.cartItems).toContainText([
+    await expect(cartPage.productNames).toHaveText([
       "Sauce Labs Backpack",
       "Sauce Labs Bike Light",
     ]);
+
+    await expect(cartPage.productPrices).toHaveText(["$29.99", "$9.99"]);
 
     // Remove Backpack
     await cartPage.removeProduct("Sauce Labs Backpack");
@@ -47,31 +63,38 @@ test.describe("Product Selection, Cart and Checkout", () => {
     await expect(cartPage.cartItems).toHaveCount(1);
     await expect(cartPage.cartBadge).toHaveText("1");
 
-    await expect(cartPage.cartItems).toContainText("Sauce Labs Bike Light");
+    await expect(cartPage.productNames).toHaveText(["Sauce Labs Bike Light"]);
+
+    await expect(cartPage.productPrices).toHaveText(["$9.99"]);
 
     // Continue shopping
     await cartPage.continueShopping();
 
-    // Verify inventory is displayed
+    // Verify inventory and cart state
     await expect(inventoryPage.productList).toBeVisible();
-
-    // Verify cart badge persists
     await expect(cartPage.cartBadge).toHaveText("1");
 
     // Return to cart
     await cartPage.openCart();
 
-    // Verify remaining cart item persists
+    // Verify cart contents persist
     await expect(cartPage.cartItems).toHaveCount(1);
 
-    await expect(cartPage.cartItems).toContainText("Sauce Labs Bike Light");
+    await expect(cartPage.productNames).toHaveText(["Sauce Labs Bike Light"]);
+
+    await expect(cartPage.productPrices).toHaveText(["$9.99"]);
   });
 
   test("should validate required checkout information", async () => {
     await inventoryPage.addProductToCart("Sauce Labs Backpack");
 
+    await expect(cartPage.cartBadge).toHaveText("1");
+
     await cartPage.openCart();
     await cartPage.proceedToCheckout();
+
+    // Verify customer information page
+    await expect(checkoutPage.firstNameInput).toBeVisible();
 
     // First name validation
     await checkoutPage.continueButton.click();
@@ -96,32 +119,40 @@ test.describe("Product Selection, Cart and Checkout", () => {
       "Error: Postal Code is required",
     );
 
-    // Valid customer information
+    // Submit valid customer information
     await checkoutPage.postalCodeInput.fill("12345");
     await checkoutPage.continueButton.click();
 
+    // Verify navigation to order overview
     await expect(checkoutPage.finishButton).toBeVisible();
+    await expect(checkoutPage.cartItems).toHaveCount(1);
   });
 
-  test("should complete an order successfully", async ({ page }) => {
+  test("should complete an order and verify all purchase details", async () => {
+    // 1. Add products to cart
     await inventoryPage.addProductToCart("Sauce Labs Backpack");
     await inventoryPage.addProductToCart("Sauce Labs Bike Light");
 
+    // Verify cart count
     await expect(cartPage.cartBadge).toHaveText("2");
 
+    // 2. Open cart
     await cartPage.openCart();
 
-    expect(await cartPage.getAllCartProductNames()).toEqual([
+    // Verify cart contents
+    await expect(cartPage.cartItems).toHaveCount(2);
+
+    await expect(cartPage.productNames).toHaveText([
       "Sauce Labs Backpack",
       "Sauce Labs Bike Light",
     ]);
 
-    expect(await cartPage.getAllCartProductPrices()).toEqual([
-      "$29.99",
-      "$9.99",
-    ]);
+    await expect(cartPage.productPrices).toHaveText(["$29.99", "$9.99"]);
 
+    // 3. Proceed to checkout
     await cartPage.proceedToCheckout();
+
+    await expect(checkoutPage.firstNameInput).toBeVisible();
 
     await checkoutPage.firstNameInput.fill("Ahmed");
     await checkoutPage.lastNameInput.fill("Mohamed");
@@ -129,41 +160,57 @@ test.describe("Product Selection, Cart and Checkout", () => {
 
     await checkoutPage.continueButton.click();
 
-    // Verify order overview
+    // 4. Verify checkout summary
     await expect(checkoutPage.cartItems).toHaveCount(2);
 
-    await expect(checkoutPage.paymentInformation).toBeVisible();
-    await expect(checkoutPage.shippingInformation).toBeVisible();
-
-    const orderNames = await checkoutPage.cartItems
-      .locator('[data-test="inventory-item-name"]')
-      .allInnerTexts();
-
-    expect(orderNames).toEqual([
+    // Verify product names
+    await expect(checkoutPage.productNames).toHaveText([
       "Sauce Labs Backpack",
       "Sauce Labs Bike Light",
     ]);
 
-    // Verify subtotal, tax and total calculations.
-    const subtotalText = await checkoutPage.subtotalLabel.innerText();
-    const taxText = await checkoutPage.taxLabel.innerText();
-    const totalText = await checkoutPage.totalLabel.innerText();
+    // Verify product prices
+    await expect(checkoutPage.productPrices).toHaveText(["$29.99", "$9.99"]);
 
-    const amount = (text: string): number =>
-      Number(text.match(/\$([\d.]+)/)?.[1]);
+    // Verify payment and shipping information
+    await expect(checkoutPage.paymentInformation).toBeVisible();
+    await expect(checkoutPage.shippingInformation).toBeVisible();
 
-    const subtotal = amount(subtotalText);
-    const tax = amount(taxText);
-    const total = amount(totalText);
+    // Verify subtotal, tax and total labels
+    await expect(checkoutPage.subtotalLabel).toHaveText("Item total: $39.98");
 
-    expect(subtotal).toBeCloseTo(39.98, 2);
-    expect(total).toBeCloseTo(subtotal + tax, 2);
+    await expect(checkoutPage.taxLabel).toHaveText("Tax: $3.20");
 
-    // Complete order
+    await expect(checkoutPage.totalLabel).toHaveText("Total: $43.18");
+
+    // Extract actual displayed amounts
+    const subtotal = extractAmount(
+      await checkoutPage.subtotalLabel.innerText(),
+    );
+
+    const tax = extractAmount(await checkoutPage.taxLabel.innerText());
+
+    const total = extractAmount(await checkoutPage.totalLabel.innerText());
+
+    // Verify expected amounts
+    expect(subtotal).toBe(39.98);
+    expect(tax).toBe(3.2);
+    expect(total).toBe(43.18);
+
+    // Verify total = subtotal + tax using actual UI values
+    expect(Math.round((subtotal + tax) * 100)).toBe(Math.round(total * 100));
+
+    // 5. Finish order
     await checkoutPage.finishButton.click();
 
-    await expect(checkoutPage.completionHeader).toBeVisible();
-    await expect(checkoutPage.completionMessage).toBeVisible();
+    // Verify final confirmation
+    await expect(checkoutPage.completionHeader).toHaveText(
+      "Thank you for your order!",
+    );
+
+    await expect(checkoutPage.completionMessage).toHaveText(
+      "Your order has been dispatched, and will arrive just as fast as the pony can get there!",
+    );
 
     await expect(checkoutPage.backToProductsButton).toBeVisible();
   });

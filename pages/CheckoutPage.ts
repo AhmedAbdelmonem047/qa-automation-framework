@@ -13,6 +13,8 @@ export class CheckoutPage {
 
   // Order overview
   readonly cartItems: Locator;
+  readonly productNames: Locator;
+  readonly productPrices: Locator;
   readonly paymentInformation: Locator;
   readonly shippingInformation: Locator;
   readonly subtotalLabel: Locator;
@@ -51,6 +53,14 @@ export class CheckoutPage {
 
     // Order overview
     this.cartItems = page.locator('[data-test="inventory-item"]');
+    this.productNames = this.cartItems.locator(
+      '[data-test="inventory-item-name"]',
+    );
+
+    this.productPrices = this.cartItems.locator(
+      '[data-test="inventory-item-price"]',
+    );
+
     this.paymentInformation = page.locator('[data-test="payment-info-value"]');
     this.shippingInformation = page.locator(
       '[data-test="shipping-info-value"]',
