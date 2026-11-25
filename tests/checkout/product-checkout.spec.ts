@@ -85,7 +85,7 @@ test.describe("Product Selection, Cart and Checkout", () => {
     await expect(cartPage.productPrices).toHaveText(["$9.99"]);
   });
 
-  test("should validate required checkout information", async () => {
+  test("should prevent checkout when required information is missing", async () => {
     await inventoryPage.addProductToCart("Sauce Labs Backpack");
 
     await expect(cartPage.cartBadge).toHaveText("1");
@@ -93,8 +93,10 @@ test.describe("Product Selection, Cart and Checkout", () => {
     await cartPage.openCart();
     await cartPage.proceedToCheckout();
 
-    // Verify customer information page
     await expect(checkoutPage.firstNameInput).toBeVisible();
+
+    // Verify checkout starts on customer information page
+    await expect(checkoutPage.page).toHaveURL(/checkout-step-one\.html$/);
 
     // First name validation
     await checkoutPage.continueButton.click();
@@ -102,6 +104,8 @@ test.describe("Product Selection, Cart and Checkout", () => {
     await expect(checkoutPage.errorMessage).toHaveText(
       "Error: First Name is required",
     );
+
+    await expect(checkoutPage.page).toHaveURL(/checkout-step-one\.html$/);
 
     // Last name validation
     await checkoutPage.firstNameInput.fill("Ahmed");
@@ -111,6 +115,8 @@ test.describe("Product Selection, Cart and Checkout", () => {
       "Error: Last Name is required",
     );
 
+    await expect(checkoutPage.page).toHaveURL(/checkout-step-one\.html$/);
+
     // Postal code validation
     await checkoutPage.lastNameInput.fill("Mohamed");
     await checkoutPage.continueButton.click();
@@ -119,24 +125,67 @@ test.describe("Product Selection, Cart and Checkout", () => {
       "Error: Postal Code is required",
     );
 
+    await expect(checkoutPage.page).toHaveURL(/checkout-step-one\.html$/);
+
     // Submit valid customer information
     await checkoutPage.postalCodeInput.fill("12345");
     await checkoutPage.continueButton.click();
 
     // Verify navigation to order overview
+    await expect(checkoutPage.page).toHaveURL(/checkout-step-two\.html$/);
+
     await expect(checkoutPage.finishButton).toBeVisible();
     await expect(checkoutPage.cartItems).toHaveCount(1);
   });
 
+  test("should document checkout behavior when the cart is empty", async () => {
+    // Open cart without adding products
+    await cartPage.openCart();
+
+    // Verify empty cart
+    await expect(cartPage.cartItems).toHaveCount(0);
+    await expect(cartPage.cartBadge).toBeHidden();
+
+    // Attempt checkout with an empty cart
+    await cartPage.proceedToCheckout();
+
+    // SauceDemo allows navigation to checkout with an empty cart.
+    await expect(checkoutPage.firstNameInput).toBeVisible();
+
+    await expect(checkoutPage.page).toHaveURL(/checkout-step-one\.html$/);
+
+    // Submit valid customer information
+    await checkoutPage.firstNameInput.fill("Ahmed");
+    await checkoutPage.lastNameInput.fill("Mohamed");
+    await checkoutPage.postalCodeInput.fill("12345");
+
+    await checkoutPage.continueButton.click();
+
+    // Verify empty checkout overview
+    await expect(checkoutPage.page).toHaveURL(/checkout-step-two\.html$/);
+
+    await expect(checkoutPage.cartItems).toHaveCount(0);
+    await expect(checkoutPage.finishButton).toBeVisible();
+
+    // Verify zero-value order summary
+    await expect(checkoutPage.subtotalLabel).toHaveText(
+      /Item total:\s*\$0(?:\.00)?/,
+    );
+
+    await expect(checkoutPage.taxLabel).toHaveText(/Tax:\s*\$0(?:\.00)?/);
+
+    await expect(checkoutPage.totalLabel).toHaveText(/Total:\s*\$0(?:\.00)?/);
+  });
+
   test("should complete an order and verify all purchase details", async () => {
-    // 1. Add products to cart
+    // Add products to cart
     await inventoryPage.addProductToCart("Sauce Labs Backpack");
     await inventoryPage.addProductToCart("Sauce Labs Bike Light");
 
     // Verify cart count
     await expect(cartPage.cartBadge).toHaveText("2");
 
-    // 2. Open cart
+    // Open cart
     await cartPage.openCart();
 
     // Verify cart contents
@@ -149,34 +198,35 @@ test.describe("Product Selection, Cart and Checkout", () => {
 
     await expect(cartPage.productPrices).toHaveText(["$29.99", "$9.99"]);
 
-    // 3. Proceed to checkout
+    // Proceed to checkout
     await cartPage.proceedToCheckout();
 
     await expect(checkoutPage.firstNameInput).toBeVisible();
 
+    // Enter customer information
     await checkoutPage.firstNameInput.fill("Ahmed");
     await checkoutPage.lastNameInput.fill("Mohamed");
     await checkoutPage.postalCodeInput.fill("12345");
 
     await checkoutPage.continueButton.click();
 
-    // 4. Verify checkout summary
+    await expect(checkoutPage.page).toHaveURL(/checkout-step-two\.html$/);
+
+    // Verify checkout summary
     await expect(checkoutPage.cartItems).toHaveCount(2);
 
-    // Verify product names
     await expect(checkoutPage.productNames).toHaveText([
       "Sauce Labs Backpack",
       "Sauce Labs Bike Light",
     ]);
 
-    // Verify product prices
     await expect(checkoutPage.productPrices).toHaveText(["$29.99", "$9.99"]);
 
     // Verify payment and shipping information
     await expect(checkoutPage.paymentInformation).toBeVisible();
     await expect(checkoutPage.shippingInformation).toBeVisible();
 
-    // Verify subtotal, tax and total labels
+    // Verify displayed price labels
     await expect(checkoutPage.subtotalLabel).toHaveText("Item total: $39.98");
 
     await expect(checkoutPage.taxLabel).toHaveText("Tax: $3.20");
@@ -200,10 +250,12 @@ test.describe("Product Selection, Cart and Checkout", () => {
     // Verify total = subtotal + tax using actual UI values
     expect(Math.round((subtotal + tax) * 100)).toBe(Math.round(total * 100));
 
-    // 5. Finish order
+    // Finish order
     await checkoutPage.finishButton.click();
 
     // Verify final confirmation
+    await expect(checkoutPage.page).toHaveURL(/checkout-complete\.html$/);
+
     await expect(checkoutPage.completionHeader).toHaveText(
       "Thank you for your order!",
     );
