@@ -2,13 +2,18 @@
 
 A portfolio test-automation project built with **Playwright, TypeScript, and the Page Object Model (POM)**.
 
-The current implementation automates UI workflows on [SauceDemo](https://www.saucedemo.com), a public e-commerce practice application. It covers authentication, inventory, shopping-cart operations, and checkout, including end-to-end purchase exercises, negative scenarios, selector improvements, shared-locator refactoring, and Chromium/Firefox verification. API automation and continuous integration are planned extensions.
+The project contains two complementary automation suites that target separate practice applications:
 
-> SauceDemo is a public demo service and is not owned by this project. Its availability and behavior may change. Test results in this README describe a recorded run; they do not guarantee future availability or prove that the application is defect-free.
+- **SauceDemo:** UI automation covering authentication, inventory, shopping-cart operations, and checkout.
+- **Restful Booker:** REST API automation covering booking operations, authentication, negative scenarios, runtime response validation, and test-data cleanup.
+
+The UI and API suites are intentionally independent. They do not share application data and are not presented as a hybrid UI/API workflow.
+
+> SauceDemo and Restful Booker are public practice services and are not owned by this project. Their availability and behavior may change. Recorded test results describe specific runs; they do not guarantee future availability or prove that either application is defect-free.
 
 ## Project Status
 
-### Implemented and tested
+### Implemented UI automation
 
 - TypeScript Playwright project with Chromium, Firefox, and WebKit browser projects.
 - Page Object Model classes for login, inventory, cart, and checkout pages.
@@ -19,31 +24,45 @@ The current implementation automates UI workflows on [SauceDemo](https://www.sau
 - Centralized typed checkout test data.
 - Playwright HTML test reporting.
 
-### Completed checkout coverage and refactoring
+### Implemented API automation
 
-The completed work includes reviewing page-object selectors and preferring accessible user-facing locators where appropriate; implementing end-to-end product selection, cart, and checkout exercises; adding exact product, price, cart-count, order-summary, calculation, and confirmation assertions; adding negative checkout and empty-cart scenarios; documenting unavailable-product coverage as not applicable because the practice application exposes no reliable stock state; and removing duplicated product-locator definitions.
+- REST API tests for Restful Booker using Playwright's API request context.
+- Centralized API operations through `ApiClient`.
+- Booking creation, retrieval, authenticated update, and deletion.
+- Negative scenarios for missing required fields, invalid data types, and unauthorized requests.
+- Runtime response validation using Zod schemas.
+- Reusable booking creation and booking-ID helpers.
+- Per-test booking tracking and automatic cleanup.
+- Environment-based API URL and authentication credentials.
 
-The latest Chromium/Firefox verification reported **102 tests passed and 0 failed**. Individual per-browser counts and the execution date were not supplied, so this README does not assign a split or date to that result.
+The API implementation is documented in [`docs/api-testing.md`](docs/api-testing.md). Run the API suite before recording a new execution result; this README does not claim a current API pass count.
+
+### Completed UI coverage and refactoring
+
+The completed UI work includes reviewing page-object selectors and preferring accessible user-facing locators where appropriate; implementing end-to-end product selection, cart, and checkout exercises; adding exact product, price, cart-count, order-summary, calculation, and confirmation assertions; adding negative checkout and empty-cart scenarios; documenting unavailable-product coverage as not applicable because the practice application exposes no reliable stock state; and removing duplicated product-locator definitions.
+
+The latest recorded Chromium/Firefox verification reported **102 tests passed and 0 failed**. Individual per-browser counts and the execution date were not supplied, so this README does not assign a split or date to that result.
 
 ### Planned extensions
 
-- REST API automation against [Restful Booker](https://restful-booker.herokuapp.com).
 - Postman collections and Newman execution.
-- GitHub Actions continuous integration and automated report artifacts.
-- Additional API fixtures, utilities, and supporting documentation as these capabilities are implemented.
+- Additional API coverage and reusable fixtures as the framework evolves.
+- Expanded reporting and test observability.
 
 Planned items are not part of the current tested coverage.
 
 ## Tested Applications
 
-| Application                                            | Type                      | Current status                            |
-| ------------------------------------------------------ | ------------------------- | ----------------------------------------- |
-| [SauceDemo](https://www.saucedemo.com)                 | E-commerce web UI         | Automated UI tests implemented            |
-| [Restful Booker](https://restful-booker.herokuapp.com) | REST API practice service | Planned; no API test results are included |
+| Application                                            | Type                      | Current status                                                     |
+| ------------------------------------------------------ | ------------------------- | ------------------------------------------------------------------ |
+| [SauceDemo](https://www.saucedemo.com)                 | E-commerce web UI         | UI automation implemented                                          |
+| [Restful Booker](https://restful-booker.herokuapp.com) | REST API practice service | API automation implemented; latest execution result to be recorded |
+
+The two applications are separate test targets. SauceDemo is used for browser-based UI workflows; Restful Booker is used for direct API testing.
 
 ## Test Coverage
 
-The November 18, 2026 historical baseline contained 30 distinct test cases and 90 successful executions across Chromium, Firefox, and WebKit. The later Chromium/Firefox verification is recorded separately below.
+The November 18, 2026 historical UI baseline contained 30 distinct test cases and 90 successful executions across Chromium, Firefox, and WebKit. The later Chromium/Firefox verification is recorded separately below.
 
 ### Authentication — `tests/ui/auth.spec.ts`
 
@@ -104,9 +123,27 @@ A separate end-to-end exercise spec complements the existing UI suites. The exer
 
 **Implementation and verification status: Completed.** The end-to-end test scenarios and assertions were implemented, the shared product-locator refactor was completed and committed, and the Chromium/Firefox validation reported 102 passed with 0 failures. This is a separate, later verification result and is not added to the November 18 historical baseline.
 
-## Latest Chromium/Firefox Verification
+### REST API — `tests/api/booking.spec.ts`
 
-The latest validation reported the following result for the Chromium and Firefox suites:
+- API health check.
+- Create a booking and validate the returned booking data and identifier.
+- Retrieve a booking by ID.
+- Update a booking with authentication and verify the persisted result.
+- Delete a booking with authentication and verify that it no longer exists.
+- Attempt booking creation with a missing required field.
+- Attempt booking creation with an invalid data type.
+- Reject booking updates without authentication.
+- Reject booking deletion with an invalid token.
+- Validate authentication, booking, and booking-creation responses with Zod.
+- Track test-created booking IDs and clean them up after each test.
+
+**Known API validation limitations:** The missing-field and invalid-data tests use Playwright's expected-failure annotation to document observed validation weaknesses in the practice API. They are not evidence that the API correctly rejects those requests. Review the annotations when the API behavior changes.
+
+## UI Execution Results
+
+### Latest Chromium/Firefox Verification
+
+The latest recorded validation reported the following result for the Chromium and Firefox UI suites:
 
 | Item                     |            Result |
 | ------------------------ | ----------------: |
@@ -122,7 +159,7 @@ All 102 reported tests passed. The per-browser breakdown and execution date were
 
 ### Historical three-browser baseline — November 18, 2026
 
-The earlier recorded regression run covered 30 distinct test cases across Chromium, Firefox, and WebKit:
+The earlier recorded regression run covered 30 distinct UI test cases across Chromium, Firefox, and WebKit:
 
 | Item                | Result |
 | ------------------- | -----: |
@@ -134,15 +171,20 @@ The earlier recorded regression run covered 30 distinct test cases across Chromi
 
 This historical run is retained as a separate baseline and is not combined with the later Chromium/Firefox result.
 
-See [`docs/test-execution-report.md`](docs/test-execution-report.md) for checkout coverage, the historical WebKit investigations, and execution details.
+No API execution count is recorded in this README. Add API results only after running the suite and reviewing the report, including its expected-failure results and cleanup outcome.
+
+See [`docs/test-execution-report.md`](docs/test-execution-report.md) for checkout coverage, the historical WebKit investigations, and UI execution details. See [`docs/api-testing.md`](docs/api-testing.md) for API setup and execution instructions.
 
 ## Repository Structure
 
-The main files relevant to the current UI suite are organized as follows:
+The main project files are organized as follows. Keep this tree synchronized with the actual repository as files are added or moved.
 
 ```text
 qa-automation-framework/
+├── .github/
+│   └── workflows/          # GitHub Actions workflow(s)
 ├── docs/
+│   ├── api-testing.md
 │   ├── test-plan.md
 │   └── test-execution-report.md
 ├── pages/
@@ -153,20 +195,30 @@ qa-automation-framework/
 ├── test-data/
 │   └── checkout-data.ts
 ├── tests/
-│   ├── ui/
-│   │   ├── auth.spec.ts
-│   │   ├── inventory.spec.ts
-│   │   ├── cart.spec.ts
-│   │   └── checkout.spec.ts
-│   └── checkout/
-│       └── product-checkout.spec.ts  # End-to-end checkout exercises
+│   ├── api/
+│   │   └── booking.spec.ts
+│   ├── checkout/
+│   │   └── product-checkout.spec.ts
+│   ├── helpers/
+│   │   └── booking.helper.ts
+│   └── ui/
+│       ├── auth.spec.ts
+│       ├── inventory.spec.ts
+│       ├── cart.spec.ts
+│       └── checkout.spec.ts
+├── utils/
+│   ├── api-client.ts
+│   └── schemas/
+│       └── booking.schema.ts
+├── .env.example
+├── .gitignore
 ├── playwright.config.ts
 ├── package.json
 ├── package-lock.json
 └── README.md
 ```
 
-Keep this tree synchronized with the actual repository as additional files and capabilities are added.
+The local `.env` file is intentionally excluded from the repository and is not shown in the tree.
 
 ## Prerequisites
 
@@ -175,7 +227,7 @@ Keep this tree synchronized with the actual repository as additional files and c
 3. **Git** — to clone the repository and manage changes.
 4. **Visual Studio Code** or another TypeScript editor (recommended).
 
-Internet access is required to reach SauceDemo and install the Playwright browsers.
+Internet access is required to reach SauceDemo and Restful Booker and to install the Playwright browsers.
 
 ## Installation
 
@@ -208,15 +260,27 @@ On Linux machines or CI runners, install browser system dependencies as well:
 npx playwright install --with-deps
 ```
 
+### 4. Configure API environment variables
+
+Copy `.env.example` to `.env` in the project root and provide the required Restful Booker credentials:
+
+```env
+API_BASE_URL=https://restful-booker.herokuapp.com
+API_USERNAME=your_username
+API_PASSWORD=your_password
+```
+
+Do not commit `.env` or real credentials. See [`docs/api-testing.md`](docs/api-testing.md) for details.
+
 ## Running the Tests
 
-Run the complete test suite across all configured browser projects:
+Run the complete Playwright test suite across all configured projects:
 
 ```bash
 npx playwright test
 ```
 
-Run the existing UI tests:
+Run the UI tests:
 
 ```bash
 npx playwright test tests/ui
@@ -235,7 +299,7 @@ npx playwright test tests/checkout/product-checkout.spec.ts --project=chromium
 npx playwright test tests/checkout/product-checkout.spec.ts --project=firefox
 ```
 
-Run an individual suite:
+Run an individual UI suite:
 
 ```bash
 # Authentication
@@ -251,6 +315,30 @@ npx playwright test tests/ui/cart.spec.ts
 npx playwright test tests/ui/checkout.spec.ts
 ```
 
+Run the API suite:
+
+```bash
+npx playwright test tests/api
+```
+
+Run only the booking API tests:
+
+```bash
+npx playwright test tests/api/booking.spec.ts
+```
+
+Run the API suite with the list reporter:
+
+```bash
+npx playwright test tests/api --reporter=list
+```
+
+Check TypeScript compilation:
+
+```bash
+npx tsc --noEmit
+```
+
 Run the suite in one browser project:
 
 ```bash
@@ -259,7 +347,7 @@ npx playwright test --project=firefox
 npx playwright test --project=webkit
 ```
 
-Run with a visible browser window:
+Run UI tests with a visible browser window:
 
 ```bash
 npx playwright test --headed
@@ -271,7 +359,7 @@ Open Playwright's interactive UI mode:
 npx playwright test --ui
 ```
 
-The browser project names are configured in `playwright.config.ts`.
+The browser project names are configured in `playwright.config.ts`. The API suite uses Playwright's API request context and does not require launching a browser.
 
 ## Viewing the Playwright Report
 
@@ -300,41 +388,51 @@ The UI tests keep page-specific locators and reusable interactions in the `pages
 
 Assertions and test scenarios belong in the `tests/ui/` and `tests/checkout/` specifications. Page objects provide reusable locators and interactions. The selector strategy prioritizes accessible user-facing locators (`getByRole()`, `getByLabel()`, `getByText()`, and `getByPlaceholder()`) where suitable, while retaining stable `data-test` and structural selectors for elements that do not have a useful semantic locator.
 
-## Test Data
+## API Test Architecture
 
-Non-secret checkout inputs and validation scenarios are centralized in `test-data/checkout-data.ts`. Tests import this data instead of duplicating customer details and expected validation messages in individual test cases.
+The API suite uses `ApiClient` for endpoint operations, booking helpers for reusable creation and ID extraction, and Zod schemas for runtime response validation. Test-specific booking tracking, assertions, and cleanup remain in the API test suite.
 
-## Test Isolation
+API environment configuration, authentication handling, response schemas, cleanup behavior, and CI requirements are documented in [`docs/api-testing.md`](docs/api-testing.md).
 
-Playwright's built-in `page` fixture provides an isolated browser context for each test by default. Authentication, inventory, cart, and checkout tests establish their own required login state rather than depending on another test's execution. The authentication suite also verifies that separate browser contexts do not share authenticated sessions.
+## Test Data and Isolation
+
+Non-secret checkout inputs and validation scenarios are centralized in `test-data/checkout-data.ts`. UI tests import this data instead of duplicating customer details and expected validation messages in individual test cases.
+
+Playwright's built-in `page` fixture provides an isolated browser context for each UI test by default. Authentication, inventory, cart, and checkout tests establish their own required login state rather than depending on another test's execution. The authentication suite also verifies that separate browser contexts do not share authenticated sessions.
+
+API tests create their own booking records and track their identifiers for cleanup. API test data is independent of SauceDemo UI test data.
 
 ## Test Documentation
 
 - [`docs/test-plan.md`](docs/test-plan.md) — project objective, scope, exclusions, test types, environments, risks, and entry/exit criteria.
-- [`docs/test-execution-report.md`](docs/test-execution-report.md) — recorded regression results, cross-browser findings, investigation details, and test improvements.
+- [`docs/test-execution-report.md`](docs/test-execution-report.md) — recorded UI regression results, cross-browser findings, investigation details, and test improvements.
+- [`docs/api-testing.md`](docs/api-testing.md) — API configuration, authentication, response validation, test-data management, cleanup, CI environment variables, and execution instructions.
 
-## Planned API Automation: Restful Booker
+## Continuous Integration
 
-Restful Booker is the planned API-testing target for a later project stage. The intended coverage includes creating, retrieving, updating, partially updating, and deleting bookings; authentication; and representative invalid-input and error-response scenarios.
+The repository includes a GitHub Actions workflow for Playwright test execution. The workflow needs the API environment variables to run the API tests. Configure these repository secrets in GitHub Actions:
 
-API tests and their execution results are not included in the current project status. Once implemented, document their actual file paths, setup requirements, execution commands, and verified results here.
+- `API_BASE_URL`
+- `API_USERNAME`
+- `API_PASSWORD`
 
-## Planned Continuous Integration
+The workflow must explicitly map the secrets into the test job or step environment. Repository secrets are not automatically exposed to a workflow. Do not commit `.env` or actual credentials.
 
-GitHub Actions is a planned extension. Once implemented, document the actual workflow triggers, Node.js version, browser matrix, executed test commands, and uploaded report artifacts. CI should not be described as active until a workflow has been committed and successfully run.
+A successful CI run should be recorded only after the workflow has completed successfully with the required secrets configured. This README does not claim that the latest API CI execution is passing.
 
 ## Known Limitations
 
-- Automated UI coverage currently focuses on SauceDemo authentication, inventory, shopping-cart, and checkout workflows.
-- API automation against Restful Booker is not yet implemented.
+- UI automation currently focuses on SauceDemo authentication, inventory, shopping-cart, and checkout workflows.
+- API automation targets Restful Booker; its test data is separate from SauceDemo.
+- The missing-field and invalid-data API scenarios document known validation limitations and are marked as expected failures until the API behavior is corrected.
 - Postman/Newman execution is not yet implemented.
-- GitHub Actions CI execution is not yet implemented.
-- SauceDemo is a public practice service and may change or become temporarily unavailable.
+- The exact latest API execution count and result have not been recorded in this README.
+- SauceDemo and Restful Booker are public practice services and may change or become temporarily unavailable.
 - The empty-cart scenario is covered as a behavior investigation; the test verifies the observed zero-item checkout summary without submitting an empty order.
 - Unavailable-product testing is documented as N/A because the standard practice application does not expose a reliable stock/availability state.
-- The November 18 three-browser baseline and the later Chromium/Firefox verification are separate runs with separate totals.
+- The November 18 three-browser UI baseline and the later Chromium/Firefox UI verification are separate runs with separate totals.
 - Browser coverage is limited to the configured and executed browser projects.
-- Passing tests demonstrate the tested scenarios under the recorded conditions; they do not prove that the application is defect-free.
+- Passing tests demonstrate the tested scenarios under the recorded conditions; they do not prove that either application is defect-free.
 
 ## License
 

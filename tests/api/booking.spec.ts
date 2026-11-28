@@ -1,11 +1,17 @@
 import { test, expect } from "@playwright/test";
+
 import {
   ApiClient,
   type Booking,
-  type CreateBookingResponse,
   type AuthCredentials,
-  type AuthTokenResponse,
 } from "../../utils/api-client";
+
+import { createBooking, getBookingId } from "../helpers/booking.helper";
+
+import {
+  AuthTokenResponseSchema,
+  BookingSchema,
+} from "../../utils/schemas/booking.schema";
 
 const apiBaseURL = process.env.API_BASE_URL;
 
@@ -55,6 +61,7 @@ test.describe("Restful Booker API - Booking", () => {
   });
 
   // Generate and reuse an authentication token within a test.
+
   async function getAuthToken(api: ApiClient): Promise<string> {
     if (authToken) {
       return authToken;
@@ -64,14 +71,7 @@ test.describe("Restful Booker API - Booking", () => {
 
     expect(response.status()).toBe(200);
 
-    const responseBody = (await response.json()) as AuthTokenResponse;
-
-    if (
-      typeof responseBody.token !== "string" ||
-      responseBody.token.length === 0
-    ) {
-      throw new Error("Authentication failed: no token returned.");
-    }
+    const responseBody = AuthTokenResponseSchema.parse(await response.json());
 
     authToken = responseBody.token;
 
@@ -80,18 +80,11 @@ test.describe("Restful Booker API - Booking", () => {
 
   // Create a booking and immediately register its ID for cleanup.
   async function createAndTrackBooking(api: ApiClient, booking: Booking) {
-    const response = await api.createBooking(booking);
+    const result = await createBooking(api, booking);
 
-    const responseBody = (await response.json()) as CreateBookingResponse;
+    bookingIdsToCleanup.push(getBookingId(result.responseBody));
 
-    if (
-      Number.isInteger(responseBody.bookingid) &&
-      responseBody.bookingid > 0
-    ) {
-      bookingIdsToCleanup.push(responseBody.bookingid);
-    }
-
-    return { response, responseBody };
+    return result;
   }
 
   // Reusable booking creation for retrieval and update tests.
@@ -105,9 +98,20 @@ test.describe("Restful Booker API - Booking", () => {
     );
 
     expect(response.status()).toBe(200);
-    expect(responseBody.bookingid).toBeGreaterThan(0);
 
     return responseBody.bookingid;
+  }
+
+  function extractCreatedBookingId(body: unknown): number | undefined {
+    if (typeof body !== "object" || body === null || !("bookingid" in body)) {
+      return undefined;
+    }
+
+    const id = body.bookingid;
+
+    return typeof id === "number" && Number.isInteger(id) && id > 0
+      ? id
+      : undefined;
   }
 
   // Automatically delete test-created bookings after every test.
@@ -181,24 +185,8 @@ test.describe("Restful Booker API - Booking", () => {
 
     expect(response.status()).toBe(200);
 
-    expect(responseBody.bookingid).toBeDefined();
-    expect(typeof responseBody.bookingid).toBe("number");
-    expect(Number.isInteger(responseBody.bookingid)).toBe(true);
-    expect(responseBody.bookingid).toBeGreaterThan(0);
-
-    expect(responseBody.booking).toBeDefined();
-
+    // Verify the returned booking matches the submitted data.
     expect(responseBody.booking).toMatchObject({ ...bookingData });
-
-    expect(typeof responseBody.booking.firstname).toBe("string");
-    expect(typeof responseBody.booking.lastname).toBe("string");
-    expect(typeof responseBody.booking.totalprice).toBe("number");
-    expect(typeof responseBody.booking.depositpaid).toBe("boolean");
-
-    expect(typeof responseBody.booking.bookingdates.checkin).toBe("string");
-    expect(typeof responseBody.booking.bookingdates.checkout).toBe("string");
-
-    expect(typeof responseBody.booking.additionalneeds).toBe("string");
   });
 
   // Booking retrieval
@@ -212,12 +200,9 @@ test.describe("Restful Booker API - Booking", () => {
 
     expect(response.status()).toBe(200);
 
-    const responseBody = (await response.json()) as Booking;
+    const responseBody = BookingSchema.parse(await response.json());
 
     expect(responseBody).toMatchObject({ ...bookingData });
-
-    expect(responseBody.firstname).toBe(bookingData.firstname);
-    expect(responseBody.lastname).toBe(bookingData.lastname);
   });
 
   // Authenticated booking update
@@ -252,7 +237,7 @@ test.describe("Restful Booker API - Booking", () => {
 
     expect(updateResponse.status()).toBe(200);
 
-    const updateBody = (await updateResponse.json()) as Booking;
+    const updateBody = BookingSchema.parse(await updateResponse.json());
 
     expect(updateBody).toMatchObject({ ...updatedBooking });
 
@@ -261,7 +246,9 @@ test.describe("Restful Booker API - Booking", () => {
 
     expect(verificationResponse.status()).toBe(200);
 
-    const verificationBody = (await verificationResponse.json()) as Booking;
+    const verificationBody = BookingSchema.parse(
+      await verificationResponse.json(),
+    );
 
     expect(verificationBody).toMatchObject({ ...updatedBooking });
   });
@@ -285,13 +272,146 @@ test.describe("Restful Booker API - Booking", () => {
     // Assert: Successful deletion.
     expect(deleteResponse.status()).toBe(201);
 
-    // The explicit deletion was successful.
-    // Remove this ID to prevent afterEach from deleting it again.
-    bookingIdsToCleanup = bookingIdsToCleanup.filter((id) => id !== bookingId);
-
     // Verify that the booking no longer exists.
     const verificationResponse = await api.getBooking(bookingId);
 
     expect(verificationResponse.status()).toBe(404);
+
+    // Remove from cleanup tracking only after successful verification.
+    bookingIdsToCleanup = bookingIdsToCleanup.filter((id) => id !== bookingId);
+  });
+
+  // Negative scenarios
+  test.describe("Negative scenarios", () => {
+    test("Reject booking creation when a required field is missing", async ({
+      request,
+    }) => {
+      test.fail(true, "Known API validation limitation");
+
+      const incompleteBooking = {
+        firstname: "Missing",
+        // lastname intentionally omitted
+        totalprice: 150,
+        depositpaid: true,
+        bookingdates: {
+          checkin: "2027-01-01",
+          checkout: "2027-01-05",
+        },
+        additionalneeds: "Breakfast",
+      };
+
+      const response = await request.post("/booking", {
+        data: incompleteBooking,
+      });
+
+      // Prevent orphaned data if the API unexpectedly accepts the request.
+      if (response.ok()) {
+        const body: unknown = await response.json();
+        const bookingId = extractCreatedBookingId(body);
+
+        if (bookingId !== undefined) {
+          bookingIdsToCleanup.push(bookingId);
+        }
+      }
+
+      expect(response.status()).toBe(400);
+    });
+
+    test("Reject booking creation with an invalid data type", async ({
+      request,
+    }) => {
+      test.fail(true, "Known API validation limitation");
+
+      const invalidBooking = {
+        firstname: "Invalid",
+        lastname: "Price",
+        totalprice: "not-a-number",
+        depositpaid: true,
+        bookingdates: {
+          checkin: "2027-01-01",
+          checkout: "2027-01-05",
+        },
+        additionalneeds: "Breakfast",
+      };
+
+      const response = await request.post("/booking", {
+        data: invalidBooking,
+      });
+
+      // Track the booking if invalid data is unexpectedly accepted.
+      if (response.ok()) {
+        const body: unknown = await response.json();
+        const bookingId = extractCreatedBookingId(body);
+
+        if (bookingId !== undefined) {
+          bookingIdsToCleanup.push(bookingId);
+        }
+      }
+
+      expect(response.status()).toBe(400);
+    });
+
+    test("Reject booking update without authentication", async ({
+      request,
+    }) => {
+      const api = new ApiClient(request);
+
+      // Arrange: Create and track a valid booking.
+      const bookingData = createBookingData();
+      const bookingId = await createTestBooking(api, bookingData);
+
+      // Act: Attempt update without authentication.
+      const response = await request.put(`/booking/${bookingId}`, {
+        data: {
+          ...bookingData,
+          firstname: "Unauthorized",
+        },
+      });
+
+      // Assert: Request should be rejected.
+      expect(response.status()).toBe(403);
+
+      // Verify the original booking remains completely unchanged.
+      const verificationResponse = await api.getBooking(bookingId);
+
+      expect(verificationResponse.status()).toBe(200);
+
+      const verificationBody = BookingSchema.parse(
+        await verificationResponse.json(),
+      );
+
+      expect(verificationBody).toMatchObject({ ...bookingData });
+    });
+
+    test("Reject booking deletion with an invalid token", async ({
+      request,
+    }) => {
+      const api = new ApiClient(request);
+
+      // Arrange: Create and track a valid booking.
+      const bookingData = createBookingData();
+      const bookingId = await createTestBooking(api, bookingData);
+
+      // Act: Attempt deletion with an invalid authentication token.
+      const response = await request.delete(`/booking/${bookingId}`, {
+        headers: {
+          Cookie: "token=invalid-token",
+        },
+      });
+
+      // Assert: Request should be rejected.
+      expect(response.status()).toBe(403);
+
+      // Verify the booking still exists and remains unchanged.
+      const verificationResponse = await api.getBooking(bookingId);
+
+      expect(verificationResponse.status()).toBe(200);
+
+      const verificationBody = BookingSchema.parse(
+        await verificationResponse.json(),
+      );
+
+      expect(verificationBody).toMatchObject({ ...bookingData });
+    });
   });
 });
